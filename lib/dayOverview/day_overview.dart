@@ -16,7 +16,24 @@ class DayOverview {
     this.breakDuration,
   });
 
+  DayOverview copyWith({
+    DateTime? date,
+    DayType? type,
+    DateTime? startTime,
+    DateTime? endTime,
+    Duration? breakDuration,
+  }) {
+    return DayOverview(
+      date: date ?? this.date,
+      type: type ?? this.type,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      breakDuration: breakDuration ?? this.breakDuration,
+    );
+  }
+
   Duration? get workDuration {
+    if (type != DayType.workday) return null;
     if (startTime == null || endTime == null) return null;
 
     final pause = breakDuration ?? Duration.zero;

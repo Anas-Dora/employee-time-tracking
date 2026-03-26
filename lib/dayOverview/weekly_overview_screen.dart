@@ -154,7 +154,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              '${vm.progressPercent}% of weekly goal achieved',
+                              '${vm.progressPercent}% wöchentliches Ziel erreicht',
                               style: GoogleFonts.inter(
                                 textStyle: TextStyle(
                                   color: Color(0xFFAFC6FF),
@@ -228,49 +228,9 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  height: 170,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Color(0xFFF3F4F5),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      InkWell(
-                        child: Container(
-                          width: 55,
-                          height: 55,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF002863),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.add, size: 24, color: Colors.white),
-                        ),
-                        onTap: () {
-                          //TODO Hier könnte die Logik zum Hinzufügen eines neuen Protokolls implementiert werden
-                        },
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        "Protokollzeit",
-                        style: GoogleFonts.manrope(
-                          textStyle: TextStyle(
-                            color: Color(0xFF002863),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 SizedBox(height: 48),
                 for (int i = 0; i < week.days.length; i++) ...[
-                  _buildDayCard(week.days[i]),
+                  _buildDayCard(context, week.days[i], vm),
                   if (i != week.days.length - 1) SizedBox(height: 16),
                 ],
               ],
@@ -281,14 +241,17 @@ class WeeklyOverviewScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDayCard(DayOverview day) {
+  Widget _buildDayCard(
+    BuildContext context,
+    DayOverview day,
+    WeeklyOverviewViewModel vm,
+  ) {
     Color cardColor;
     Color borderColor;
     Color deteCardColor;
     Color primaryTextColor;
     Color secondaryTextColor;
     String title;
-    bool selectedDeyState;
 
     switch (day.type) {
       case DayType.workday:
@@ -298,7 +261,6 @@ class WeeklyOverviewScreen extends ConsumerWidget {
         primaryTextColor = Color(0xFF002863);
         secondaryTextColor = AppColors.secondaryTextColor;
         title = "Werktag";
-        selectedDeyState = false;
         break;
       case DayType.sick:
         cardColor = Color(0x33FFDAD6);
@@ -317,197 +279,217 @@ class WeeklyOverviewScreen extends ConsumerWidget {
         title = "Urlaub";
         break;
       default:
-        cardColor = Colors.white;
+        cardColor = Color(0x1AC3C6D3);
         borderColor = Colors.white;
-        deteCardColor = Colors.white;
-        primaryTextColor = Colors.black;
-        secondaryTextColor = Colors.black;
-        title = "-";
+        deteCardColor = Color(0xFF002863);
+        primaryTextColor = Color(0xFF002863);
+        secondaryTextColor = AppColors.secondaryTextColor;
+        title = "Werktag";
     }
 
     return Container(
-      width: double.infinity,
-      height: 170,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: cardColor,
-        border: Border.all(color: borderColor, width: 1.5),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 75,
-                height: 75,
-                decoration: BoxDecoration(
-                  color: deteCardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
+            width: double.infinity,
+            height: 170,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: cardColor,
+              border: Border.all(color: borderColor, width: 1.5),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      DateFormat('d').format(day.date),
-                      style: GoogleFonts.manrope(
-                        textStyle: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
+                    Container(
+                      width: 75,
+                      height: 75,
+                      decoration: BoxDecoration(
+                        color: deteCardColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            DateFormat('d').format(day.date),
+                            style: GoogleFonts.manrope(
+                              textStyle: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            DateFormat(
+                              'E',
+                              "de_DE",
+                            ).format(day.date).toUpperCase(),
+                            style: GoogleFonts.inter(
+                              textStyle: TextStyle(
+                                color: Color(0xFFF8F9FA),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      DateFormat('E', "de_DE").format(day.date).toUpperCase(),
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          color: Color(0xFFF8F9FA),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                    SizedBox(width: 24),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.inter(
+                            textStyle: TextStyle(
+                              color: primaryTextColor,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
+                        SizedBox(height: 3.5),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 16,
+                              color: secondaryTextColor,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              "${day.type == DayType.workday && day.startTime != null ? DateFormat('HH:mm').format(day.startTime!) : '00:00'} - ${day.type == DayType.workday && day.endTime != null ? DateFormat('HH:mm').format(day.endTime!) : '00:00'}",
+                              style: GoogleFonts.inter(
+                                textStyle: TextStyle(
+                                  color: secondaryTextColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    SizedBox(width: 72),
+                    IconButton(
+                      onPressed: () {
+                        vm.showEditDialog(context, day);
+                      },
+                      icon: Icon(
+                        Icons.edit,
+                        size: 24,
+                        color: secondaryTextColor,
                       ),
                     ),
                   ],
                 ),
-              ),
-              SizedBox(width: 24),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      textStyle: TextStyle(
-                        color: primaryTextColor,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 3.5),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: secondaryTextColor,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        "${day.startTime != null ? DateFormat('HH:mm').format(day.startTime!) : '00:00'} - ${day.endTime != null ? DateFormat('HH:mm').format(day.endTime!) : '00:00'}",
-                        style: GoogleFonts.inter(
-                          textStyle: TextStyle(
-                            color: secondaryTextColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
+                SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Column(
+                      children: [
+                        Text(
+                          "Arbeitszeit",
+                          style: GoogleFonts.inter(
+                            textStyle: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Column(
-                children: [
-                  Text(
-                    "Arbeitszeit",
-                    style: GoogleFonts.inter(
-                      textStyle: TextStyle(
-                        color: secondaryTextColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                        Text(
+                          '${day.workDuration?.inHours ?? 0}h ${day.workDuration?.inMinutes.remainder(60) ?? 0}m',
+                          style: GoogleFonts.manrope(
+                            textStyle: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    '${day.workDuration?.inHours ?? 0}h ${day.workDuration?.inMinutes.remainder(60) ?? 0}m',
-                    style: GoogleFonts.manrope(
-                      textStyle: TextStyle(
-                        color: secondaryTextColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    SizedBox(width: 32),
+                    Column(
+                      children: [
+                        Text(
+                          "Pausen",
+                          style: GoogleFonts.inter(
+                            textStyle: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${day.type == DayType.workday && day.breakDuration != null ? day.breakDuration?.inMinutes : "0"}m',
+                          style: GoogleFonts.manrope(
+                            textStyle: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 32),
-              Column(
-                children: [
-                  Text(
-                    "Pausen",
-                    style: GoogleFonts.inter(
-                      textStyle: TextStyle(
-                        color: secondaryTextColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    SizedBox(width: 32),
+                    Row(
+                      children: [
+                        _buildDayButton(
+                          isActive: day.type == DayType.sick,
+                          icon: Icons.medical_services,
+                          primaryTextColor: primaryTextColor,
+                          onTap: () {
+                            vm.toggleDayType(day.date, DayType.sick);
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        _buildDayButton(
+                          isActive: day.type == DayType.vacation,
+                          icon: Icons.beach_access,
+                          primaryTextColor: primaryTextColor,
+                          onTap: () {
+                            vm.toggleDayType(day.date, DayType.vacation);
+                          },
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    '${day.breakDuration?.inMinutes ?? 0}m',
-                    style: GoogleFonts.manrope(
-                      textStyle: TextStyle(
-                        color: secondaryTextColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 32),
-              Row(
-                children: [
-                  InkWell(
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF3F4F5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.medical_services,
-                        size: 24,
-                        color: Color(0xFF434651),
-                      ),
-                    ),
-                    onTap: () {},
-                  ),
-                  SizedBox(width: 10),
-                  InkWell(
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF3F4F5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.beach_access,
-                        size: 24,
-                        color: Color(0xFF434651),
-                      ),
-                    ),
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+                  ],
+                ),
+              ],
+            ),
+          );
+  }
+
+  Widget _buildDayButton({
+    required bool isActive,
+    required IconData icon,
+    required Color primaryTextColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: 50,
+        height: 50,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isActive ? primaryTextColor : const Color(0xFFF3F4F5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          isActive ? Icons.check : icon,
+          size: 24,
+          color: isActive ? Colors.white : const Color(0xFF434651),
+        ),
       ),
     );
   }
