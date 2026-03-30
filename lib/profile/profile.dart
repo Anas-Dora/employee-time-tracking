@@ -32,4 +32,27 @@ class Profile {
       remindersEnabled: remindersEnabled ?? this.remindersEnabled,
     );
   }
+
+  /// Konvertierung für SQLite
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'job_title': jobTitle,
+      'company': company,
+      'employee_id': employeeId,
+      'department': department,
+      'reminders_enabled': remindersEnabled ? 1 : 0,
+    };
+  }
+
+  factory Profile.fromMap(Map<String, dynamic> map) {
+    return Profile(
+      name: map['name'] as String? ?? '',
+      jobTitle: map['job_title'] as String? ?? '',
+      company: map['company'] as String? ?? '',
+      employeeId: map['employee_id'] as String? ?? '',
+      department: map['department'] as String? ?? '',
+      remindersEnabled: (map['reminders_enabled'] as int? ?? 0) == 1,
+    );
+  }
 }

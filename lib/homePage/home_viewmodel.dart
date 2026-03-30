@@ -1,8 +1,11 @@
 // viewmodels/home_viewmodel.dart
 import 'dart:async';
 
+import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/homePage/work_time.dart';
 import 'package:flutter_riverpod/legacy.dart';
+
+import '../dayOverview/day_overview.dart';
 
 
 class HomeState {
@@ -10,12 +13,15 @@ class HomeState {
   final bool isOnBreak;
   final WorkTime workTime;
   final WorkTime breakTime;
+  /// Zeitpunkt, zu dem der Timer heute gestartet wurde
+  final DateTime? startedAt;
 
   HomeState({
     required this.isRunning,
     required this.isOnBreak,
     required this.workTime,
     required this.breakTime,
+    this.startedAt,
   });
 
   HomeState copyWith({
@@ -23,12 +29,14 @@ class HomeState {
     bool? isOnBreak,
     WorkTime? workTime,
     WorkTime? breakTime,
+    DateTime? startedAt,
   }) {
     return HomeState(
       isRunning: isRunning ?? this.isRunning,
       isOnBreak: isOnBreak ?? this.isOnBreak,
       workTime: workTime ?? this.workTime,
       breakTime: breakTime ?? this.breakTime,
+      startedAt: startedAt ?? this.startedAt,
     );
   }
 }
@@ -40,10 +48,57 @@ class HomeViewModel extends StateNotifier<HomeState> {
       : super(HomeState(
     isRunning: false,
     isOnBreak: false,
-    workTime: WorkTime(hours: 7, minutes: 59, seconds: 50),
-    breakTime: WorkTime(hours: 0, minutes: 15, seconds: 0),
-  ));
+    workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+    breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+  )) {
+    _loadTodayFromDb();
+  }
 
+  /// Explizites Reload vom Home-Tab (z. B. bei erneutem Tab-Klick).
+  Future<void> loadToday() async {
+    if (state.isRunning || state.isOnBreak) return;
+    await _loadTodayFromDb();
+  }
+
+  /// Heutigen Eintrag aus DB laden (falls vorhanden)
+  Future<void> _loadTodayFromDb() async {
+    final today = DateTime.now();
+    final entry = await DatabaseHelper.instance.getDayEntry(today);
+    if (entry == null) {
+      state = state.copyWith(
+        startedAt: null,
+        workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+        breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+      );
+      return;
+    }
+
+    final day = DayOverview.fromMap(entry);
+    if (day.type != DayType.workday) {
+      state = state.copyWith(
+        startedAt: null,
+        workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+        breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+      );
+      return;
+    }
+
+    final workedMinutes = day.workDuration?.inMinutes ?? 0;
+    final breakMinutes = day.breakDuration?.inMinutes ?? 0;
+    state = state.copyWith(
+      startedAt: day.startTime,
+      workTime: WorkTime(
+        hours: workedMinutes ~/ 60,
+        minutes: workedMinutes % 60,
+        seconds: 0,
+      ),
+      breakTime: WorkTime(
+        hours: breakMinutes ~/ 60,
+        minutes: breakMinutes % 60,
+        seconds: 0,
+      ),
+    );
+  }
 
   void startWorkTimer() {
     if(state.isOnBreak){
@@ -51,7 +106,11 @@ class HomeViewModel extends StateNotifier<HomeState> {
     }
     if (!state.isRunning) {
       _timer = Timer.periodic(Duration(seconds: 1), (_) => _tick());
-      state = state.copyWith(isRunning: true, isOnBreak: false);
+      state = state.copyWith(
+        isRunning: true,
+        isOnBreak: false,
+        startedAt: state.startedAt ?? DateTime.now(),
+      );
     }
   }
 
@@ -73,13 +132,40 @@ class HomeViewModel extends StateNotifier<HomeState> {
     state = state.copyWith(isOnBreak: false);
   }
 
-  void stopTimer() {
+  Future<void> stopTimer() async {
     _timer?.cancel();
+
+    final now = DateTime.now();
+    final wt = state.workTime;
+    final bt = state.breakTime;
+    final startedAt = state.startedAt ?? now.subtract(
+      Duration(
+        hours: wt.hours,
+        minutes: wt.minutes,
+        seconds: wt.seconds,
+      ),
+    );
+
+    // Arbeitstag in SQLite speichern
+    final day = DayOverview(
+      date: DateTime(now.year, now.month, now.day),
+      type: DayType.workday,
+      startTime: startedAt,
+      endTime: now,
+      breakDuration: Duration(
+        hours: bt.hours,
+        minutes: bt.minutes,
+        seconds: bt.seconds,
+      ),
+    );
+    await DatabaseHelper.instance.upsertDayEntry(day.toMap());
+
     state = state.copyWith(
       isRunning: false,
       isOnBreak: false,
       workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
       breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+      startedAt: null,
     );
   }
 

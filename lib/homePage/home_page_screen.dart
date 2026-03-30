@@ -187,7 +187,7 @@ class HomePageScreen extends ConsumerWidget {
                           width: 45,
                           height: 45,
                           child: ElevatedButton(
-                            onPressed: viewModel.stopTimer,
+                            onPressed: () => viewModel.stopTimer(),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xffFFDAD6),
                               foregroundColor: const Color(0xff93000A),

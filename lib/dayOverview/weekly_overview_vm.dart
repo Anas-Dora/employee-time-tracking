@@ -1,4 +1,5 @@
 // view_models/weekly_overview_vm.dart
+import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/widgets/day_edit_dialog.dart';
 import 'package:employee_time_tracking/dayOverview/week_overview.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,9 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
   final int weeklyGoalHours; // Wochenziel in Stunden
 
   WeeklyOverviewViewModel({this.weeklyGoalHours = 40})
-    : super(_generateWeek(DateTime.now()));
+    : super(_buildEmptyWeek(DateTime.now())) {
+    _loadWeekFromDb(DateTime.now());
+  }
 
   int get progressPercent {
     final totalWorkMinutes = state.totalWork.inMinutes;
@@ -24,7 +27,51 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
     return ((totalWorkMinutes / weeklyGoalMinutes) * 100).toInt();
   }
 
-  void toggleDayType(DateTime date, DayType targetType) {
+  Future<void> loadWeek([DateTime? date]) async {
+    final current = date ?? DateTime.now();
+    await _loadWeekFromDb(current);
+  }
+
+  /// Leere Woche ohne DB-Daten erzeugen
+  static WeekOverview _buildEmptyWeek(DateTime date) {
+    final monday = date.subtract(Duration(days: date.weekday - 1));
+    final friday = monday.add(const Duration(days: 4));
+    final List<DayOverview> days = List.generate(
+      5,
+      (i) => DayOverview(
+        date: monday.add(Duration(days: i)),
+        type: DayType.none,
+      ),
+    );
+    return WeekOverview(startDate: monday, endDate: friday, days: days);
+  }
+
+  /// Wochendaten aus SQLite laden
+  Future<void> _loadWeekFromDb(DateTime date) async {
+    final monday = date.subtract(Duration(days: date.weekday - 1));
+    final friday = monday.add(const Duration(days: 4));
+
+    final dbEntries =
+        await DatabaseHelper.instance.getDayEntriesForWeek(monday);
+
+    final Map<String, DayOverview> dbMap = {};
+    for (final entry in dbEntries) {
+      final day = DayOverview.fromMap(entry);
+      final key = '${day.date.year}-${day.date.month}-${day.date.day}';
+      dbMap[key] = day;
+    }
+
+    final List<DayOverview> days = List.generate(5, (i) {
+      final d = monday.add(Duration(days: i));
+      final key = '${d.year}-${d.month}-${d.day}';
+      return dbMap[key] ??
+          DayOverview(date: d, type: DayType.none);
+    });
+
+    state = WeekOverview(startDate: monday, endDate: friday, days: days);
+  }
+
+  Future<void> toggleDayType(DateTime date, DayType targetType) async {
     final updatedDays = state.days.map((day) {
       if (!_isSameDay(day.date, date)) return day;
 
@@ -33,15 +80,19 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
     }).toList();
 
     state = state.copyWith(days: updatedDays);
+
+    // Typwechsel direkt persistieren (z. B. Krank/Urlaub per Schnellbutton).
+    final updatedDay = updatedDays.firstWhere((d) => _isSameDay(d.date, date));
+    await DatabaseHelper.instance.upsertDayEntry(updatedDay.toMap());
   }
 
-  void _updateDayDetails({
+  Future<void> _updateDayDetails({
     required DateTime date,
     required DayType type,
     required TimeOfDay? start,
     required TimeOfDay? end,
     required int breakMinutes,
-  }) {
+  }) async {
     final updatedDays = state.days.map((day) {
       if (!_isSameDay(day.date, date)) return day;
 
@@ -83,6 +134,12 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
     }).toList();
 
     state = state.copyWith(days: updatedDays);
+
+    // In SQLite speichern
+    final updatedDay = updatedDays.firstWhere(
+      (d) => _isSameDay(d.date, date),
+    );
+    await DatabaseHelper.instance.upsertDayEntry(updatedDay.toMap());
   }
 
   bool _isSameDay(DateTime first, DateTime second) {
@@ -91,42 +148,14 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
         first.day == second.day;
   }
 
-  static WeekOverview _generateWeek(DateTime date) {
-    DateTime monday = date.subtract(Duration(days: date.weekday - 1));
-    DateTime friday = monday.add(Duration(days: 4));
-
-    // Beispielhafte Tage
-    List<DayOverview> days = [
-      DayOverview(
-        date: monday,
-        type: DayType.workday,
-        startTime: DateTime(monday.year, monday.month, monday.day, 9, 0),
-        endTime: DateTime(monday.year, monday.month, monday.day, 17, 15),
-        breakDuration: Duration(minutes: 45),
-      ),
-      DayOverview(date: monday.add(Duration(days: 1)), type: DayType.sick),
-      DayOverview(date: monday.add(Duration(days: 2)), type: DayType.vacation),
-      DayOverview(
-        date: monday.add(Duration(days: 3)),
-        startTime: DateTime(monday.year, monday.month, monday.day + 3, 7, 15),
-        endTime: DateTime(monday.year, monday.month, monday.day + 3, 16, 00),
-        type: DayType.workday,
-        breakDuration: Duration(minutes: 30),
-      ),
-      DayOverview(date: monday.add(Duration(days: 4)), type: DayType.none),
-    ];
-
-    return WeekOverview(startDate: monday, endDate: friday, days: days);
+  Future<void> previousWeek() async {
+    final newDate = state.startDate.subtract(const Duration(days: 7));
+    await _loadWeekFromDb(newDate);
   }
 
-  void previousWeek() {
-    DateTime newDate = state.startDate.subtract(Duration(days: 7));
-    state = _generateWeek(newDate);
-  }
-
-  void nextWeek() {
-    DateTime newDate = state.startDate.add(Duration(days: 7));
-    state = _generateWeek(newDate);
+  Future<void> nextWeek() async {
+    final newDate = state.startDate.add(const Duration(days: 7));
+    await _loadWeekFromDb(newDate);
   }
 
   Future<void> showEditDialog(
@@ -231,7 +260,7 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
             }
 
             // Speichern + Validierung
-            void onSave() {
+            Future<void> onSave() async {
               if (selectedType == DayType.workday &&
                   (start == null || end == null)) {
                 ScaffoldMessenger.of(parentContext).showSnackBar(
@@ -287,7 +316,7 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
               }
 
               //bestehende Save-Logik
-              _updateDayDetails(
+              await _updateDayDetails(
                 date: day.date,
                 type: selectedType,
                 start: start,

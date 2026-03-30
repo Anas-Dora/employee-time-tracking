@@ -1,3 +1,4 @@
+import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/monthlyOverview/work_day.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -8,7 +9,7 @@ import '../widgets/day_edit_dialog.dart';
 
 
 final monthlyOverviewProvider =
-    StateNotifierProvider<MonthlyOverviewVM, MonthlyOverviewState>(
+    StateNotifierProvider.autoDispose<MonthlyOverviewVM, MonthlyOverviewState>(
   (ref) => MonthlyOverviewVM(),
 );
 
@@ -43,49 +44,98 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
     loadMonth();
   }
 
-  void loadMonth() {
+  Future<void> loadMonth() async {
     final date = state.currentMonth;
     final firstDay = DateTime(date.year, date.month, 1);
     final lastDay = DateTime(date.year, date.month + 1, 0);
 
-    List<WorkDay> days = [];
+    // Alle gespeicherten Einträge aus der DB laden
+    final dbEntries = await DatabaseHelper.instance
+        .getDayEntriesForMonth(date.year, date.month);
 
+    // DB-Einträge nach Datum indexieren
+    final Map<String, WorkDay> dbMap = {};
+    for (final entry in dbEntries) {
+      final wd = WorkDay.fromMap(entry);
+      // Berechnete Felder (total, diff) neu berechnen
+      final computed = _computeWorkDay(wd);
+      final dateKey =
+          '${computed.date.year}-${computed.date.month}-${computed.date.day}';
+      dbMap[dateKey] = computed;
+    }
+
+    List<WorkDay> days = [];
     for (int i = 0; i < lastDay.day; i++) {
       final day = firstDay.add(Duration(days: i));
-
-      days.add(WorkDay(date: day));
+      final key = '${day.year}-${day.month}-${day.day}';
+      days.add(dbMap[key] ?? WorkDay(date: day));
     }
 
     state = state.copyWith(days: days);
   }
 
-  void nextMonth() {
+  Future<void> nextMonth() async {
     state = state.copyWith(
       currentMonth: DateTime(
         state.currentMonth.year,
         state.currentMonth.month + 1,
       ),
     );
-    loadMonth();
+    await loadMonth();
   }
 
-  void previousMonth() {
+  Future<void> previousMonth() async {
     state = state.copyWith(
       currentMonth: DateTime(
         state.currentMonth.year,
         state.currentMonth.month - 1,
       ),
     );
-    loadMonth();
+    await loadMonth();
   }
 
-  void _updateDayDetails({
+  /// Berechnet total und diff für einen WorkDay (helper)
+  WorkDay _computeWorkDay(WorkDay wd) {
+    const int targetMinutes = 8 * 60;
+    String totalStr = '-';
+    String diffStr = '-';
+
+    if (wd.type == DayType.workday &&
+        wd.start != '-' &&
+        wd.end != '-' &&
+        wd.start.isNotEmpty &&
+        wd.end.isNotEmpty) {
+      final startParts = wd.start.split(':');
+      final endParts = wd.end.split(':');
+      final breakMinutes =
+          (wd.pause != '-' && wd.pause.isNotEmpty) ? (int.tryParse(wd.pause) ?? 0) : 0;
+
+      final startDt = DateTime(wd.date.year, wd.date.month, wd.date.day,
+          int.parse(startParts[0]), int.parse(startParts[1]));
+      final endDt = DateTime(wd.date.year, wd.date.month, wd.date.day,
+          int.parse(endParts[0]), int.parse(endParts[1]));
+
+      final workedMinutes =
+          endDt.difference(startDt).inMinutes - breakMinutes;
+      totalStr = _minutesToTimeString(workedMinutes);
+      final diffMinutes = workedMinutes - targetMinutes;
+      final sign = diffMinutes >= 0 ? '+' : '-';
+      diffStr = '$sign${_minutesToTimeString(diffMinutes.abs())}';
+    } else if (wd.type == DayType.vacation || wd.type == DayType.sick) {
+      totalStr = _minutesToTimeString(targetMinutes);
+      diffStr = '+00:00';
+    }
+
+    return wd.copyWith(total: totalStr, diff: diffStr);
+  }
+
+  Future<void> _updateDayDetails({
     required DateTime date,
     required DayType type,
     required TimeOfDay? start,
     required TimeOfDay? end,
     required int breakMinutes,
-  }) {
+  }) async {
     // Standardarbeitszeit in Minuten (8 Stunden)
     const int targetMinutes = 8 * 60;
 
@@ -131,6 +181,18 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
     }).toList();
 
     state = state.copyWith(days: updatedDays);
+
+    // In SQLite speichern
+    final updatedWd = WorkDay(
+      date: date,
+      type: type,
+      start: startStr,
+      end: endStr,
+      pause: pauseStr,
+      total: totalStr,
+      diff: diffStr,
+    );
+    await DatabaseHelper.instance.upsertDayEntry(updatedWd.toMap());
   }
 
   String _minutesToTimeString(int minutes) {
@@ -309,7 +371,7 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
             }
 
             // Speichern + Validierung
-            void onSave() {
+            Future<void> onSave() async {
               if (selectedType == DayType.workday &&
                   (start == null || end == null)) {
                 ScaffoldMessenger.of(parentContext).showSnackBar(
@@ -365,7 +427,7 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
               }
 
               //bestehende Save-Logik
-              _updateDayDetails(
+              await _updateDayDetails(
                 date: day.date,
                 type: selectedType,
                 start: start,

@@ -1,4 +1,7 @@
 import 'package:employee_time_tracking/AppColors.dart';
+import 'package:employee_time_tracking/dayOverview/weekly_overview_vm.dart';
+import 'package:employee_time_tracking/homePage/home_viewmodel.dart';
+import 'package:employee_time_tracking/monthlyOverview/monthly_overview_vm.dart';
 import 'package:employee_time_tracking/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,9 +27,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xFF002863),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF002863)),
       ),
       home: Pages(),
     );
@@ -43,14 +44,19 @@ class Pages extends StatefulWidget {
 class _PagesState extends State<Pages> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    ProfileScreen(),
-    HomePageScreen(),
-    WeeklyOverviewScreen(),
-    MonthlyOverviewScreen(),
-  ];
-
   void _onItemTapped(int index) {
+    if (index == _selectedIndex) {
+      final container = ProviderScope.containerOf(context, listen: false);
+      if (index == 0) {
+        container.read(homeViewModelProvider.notifier).loadToday();
+      } else if (index == 1) {
+        container.read(weeklyOverviewProvider.notifier).loadWeek();
+      } else if (index == 2) {
+        container.read(monthlyOverviewProvider.notifier).loadMonth();
+      }
+      return;
+    }
+
     setState(() {
       _selectedIndex = index;
     });
@@ -58,8 +64,15 @@ class _PagesState extends State<Pages> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      HomePageScreen(),
+      WeeklyOverviewScreen(),
+      MonthlyOverviewScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: pages[_selectedIndex],
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -75,7 +88,7 @@ class _PagesState extends State<Pages> {
           BottomNavigationBarItem(icon: Icon(Icons.timer), label: 'Timer'),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_view_week),
-            label: 'Tagen',
+            label: 'Woche',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.insert_chart),
