@@ -1,5 +1,5 @@
 // view_models/weekly_overview_vm.dart
-import 'package:employee_time_tracking/dayOverview/day_edit_dialog.dart';
+import 'package:employee_time_tracking/widgets/day_edit_dialog.dart';
 import 'package:employee_time_tracking/dayOverview/week_overview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';

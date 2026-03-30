@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../AppColors.dart';
-import 'day_overview.dart';
+import '../dayOverview/day_overview.dart';
 
 class DayEditDialog extends StatelessWidget {
   final DayType selectedType;

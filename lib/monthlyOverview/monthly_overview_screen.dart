@@ -105,7 +105,9 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _infoBox('Gesamtstunden', vm.totalHours),
-                        _overtimeInfoBox('Überstunden', vm.overtime),
+                        vm.overtime == 0
+                            ? _infoBox('Überstunden', vm.overtime)
+                            : _overtimeInfoBox('Überstunden', vm.overtime),
                       ],
                     ),
                   ],
@@ -160,7 +162,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                               ],
                             ),
                             ...state.days.map((day) {
-                              return _row(day);
+                              return _row(context, ref, day, vm);
                             }),
                           ],
                         ),
@@ -268,22 +270,52 @@ class MonthlyOverviewScreen extends ConsumerWidget {
   }
 
   static TableRow _row(
-      WorkDay day
+    BuildContext context,
+    WidgetRef ref,
+    WorkDay day,
+    MonthlyOverviewVM vm,
   ) {
     return TableRow(
       children: [
-        dateCell(DateFormat('dd. MMM, E', 'de_DE').format(day.date)),
-        cell(day.start),
-        cell(day.end),
-        cell(day.pause),
-        toTalWorkCell(day.total),
-        if (day.diff == '+00:00' || day.diff == '-00:00')
-          cell(day.diff)
-        else
-          diffCell(day.diff),
+        _buildLongPressCell(
+          context,
+          ref,
+          day,
+          vm,
+          dateCell(DateFormat('dd. MMM, E', 'de_DE').format(day.date)),
+        ),
+        _buildLongPressCell(context, ref, day, vm, cell(day.start)),
+        _buildLongPressCell(context, ref, day, vm, cell(day.end)),
+        _buildLongPressCell(context, ref, day, vm, cell(day.pause)),
+        _buildLongPressCell(context, ref, day, vm, toTalWorkCell(day.total)),
+        _buildLongPressCell(
+          context,
+          ref,
+          day,
+          vm,
+          day.diff == '+00:00' || day.diff == '-00:00'
+              ? cell(day.diff)
+              : diffCell(day.diff),
+        ),
       ],
     );
   }
+
+  static Widget _buildLongPressCell(
+    BuildContext context,
+    WidgetRef ref,
+    WorkDay day,
+    MonthlyOverviewVM vm,
+    Widget child,
+  ) {
+    return GestureDetector(
+      onLongPress: () {
+        vm.showDayEditDialog(context, day);
+      },
+      child: child,
+    );
+  }
+
 
   static Widget _infoBox(String title, double value) {
     return Container(

@@ -1,6 +1,10 @@
 import 'package:employee_time_tracking/monthlyOverview/work_day.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
+
+import '../dayOverview/day_overview.dart';
+import '../widgets/day_edit_dialog.dart';
 
 
 final monthlyOverviewProvider =
@@ -75,10 +79,319 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
     loadMonth();
   }
 
+  void _updateDayDetails({
+    required DateTime date,
+    required DayType type,
+    required TimeOfDay? start,
+    required TimeOfDay? end,
+    required int breakMinutes,
+  }) {
+    // Standardarbeitszeit in Minuten (8 Stunden)
+    const int targetMinutes = 8 * 60;
+
+    String startStr = '-';
+    String endStr = '-';
+    String pauseStr = '-';
+    String totalStr = '-';
+    String diffStr = '-';
+
+    if (type == DayType.workday && start != null && end != null) {
+      final startDt = DateTime(date.year, date.month, date.day, start.hour, start.minute);
+      final endDt = DateTime(date.year, date.month, date.day, end.hour, end.minute);
+      final workedMinutes = endDt.difference(startDt).inMinutes - breakMinutes;
+
+      startStr = formatTime(start);
+      endStr = formatTime(end);
+      pauseStr = breakMinutes.toString();
+      totalStr = _minutesToTimeString(workedMinutes);
+
+      final diffMinutes = workedMinutes - targetMinutes;
+      final sign = diffMinutes >= 0 ? '+' : '-';
+      diffStr = '$sign${_minutesToTimeString(diffMinutes.abs())}';
+    } else if (type == DayType.vacation || type == DayType.sick) {
+      // Urlaubstage und Kranktage zählen als volle Arbeitstage
+      totalStr = _minutesToTimeString(targetMinutes);
+      diffStr = '+00:00';
+    }
+
+    final updatedDays = state.days.map((d) {
+      if (d.date.year == date.year &&
+          d.date.month == date.month &&
+          d.date.day == date.day) {
+        return d.copyWith(
+          type: type,
+          start: startStr,
+          end: endStr,
+          pause: pauseStr,
+          total: totalStr,
+          diff: diffStr,
+        );
+      }
+      return d;
+    }).toList();
+
+    state = state.copyWith(days: updatedDays);
+  }
+
+  String _minutesToTimeString(int minutes) {
+    final h = (minutes ~/ 60).toString().padLeft(2, '0');
+    final m = (minutes % 60).toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
   String get formattedMonth {
     return DateFormat('MMMM yyyy', 'de_DE').format(state.currentMonth);
   }
 
-  double get totalHours => 164.5; // später berechnen
-  double get overtime => 12.2; // später berechnen
+  double get totalHours =>
+      _sumMinutes(state.days.map((day) => day.total), allowSignedValues: false) /
+          60;
+
+  double get overtime =>
+      _sumMinutes(state.days.map((day) => day.diff), allowSignedValues: true) /
+          60;
+
+  int _sumMinutes(Iterable<String> values,
+      {required bool allowSignedValues}) {
+    return values.fold<int>(0, (sum, value) {
+      final minutes = _parseMinutes(
+          value, allowSignedValues: allowSignedValues);
+      return sum + (minutes ?? 0);
+    });
+  }
+
+  int? _parseMinutes(String value, {required bool allowSignedValues}) {
+    final normalized = value.trim();
+    if (normalized.isEmpty || normalized == '-') return null;
+
+    final match = RegExp(r'^([+-])?(\d+):(\d{2})$').firstMatch(normalized);
+    if (match == null) return null;
+
+    final sign = match.group(1);
+    if (!allowSignedValues && sign == '-') return null;
+
+    final hours = int.tryParse(match.group(2)!);
+    final minutes = int.tryParse(match.group(3)!);
+
+    if (hours == null || minutes == null || minutes >= 60) return null;
+
+    final totalMinutes = (hours * 60) + minutes;
+    return sign == '-' ? -totalMinutes : totalMinutes;
+  }
+
+  TimeOfDay? parseTimeOfDay(String time) {
+    if (time == '-' || time.isEmpty) return null;
+    try {
+      final parts = time.split(':');
+      return TimeOfDay(
+          hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String formatTime(TimeOfDay? time) {
+    if (time == null) return '--:--';
+    final h = time.hour.toString().padLeft(2, '0');
+    final m = time.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  String getDayTypeLabel(DayType type) {
+    switch (type) {
+      case DayType.workday:
+        return 'Arbeitstag';
+      case DayType.sick:
+        return 'Krank';
+      case DayType.vacation:
+        return 'Urlaub';
+      case DayType.none:
+        return 'Keine';
+    }
+  }
+
+  Future<void> showDayEditDialog(
+      BuildContext parentContext,
+      WorkDay day,
+      ) async {
+    DayType selectedType = day.type;
+
+    TimeOfDay? start = parseTimeOfDay(day.start);
+    TimeOfDay? end = parseTimeOfDay(day.end);
+
+    final breakMinutesInitial =
+        (day.pause != '-' && day.pause.isNotEmpty) ? day.pause : '0';
+    final breakController = TextEditingController(
+      text: breakMinutesInitial,
+    );
+
+    await showDialog<bool>(
+      context: parentContext,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            //  Startzeit wählen
+            Future<void> pickStart() async {
+              final picked = await showTimePicker(
+                  context: context,
+                  initialTime: start ?? const TimeOfDay(hour: 9, minute: 0),
+                  helpText: "Wähle eine Uhrzeit",
+                  cancelText: "Abbrechen",
+                  confirmText: "OK",
+                  hourLabelText: "Stunde",
+                  minuteLabelText: "Minute",
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.fromSeed(
+                          seedColor: Colors.blue,
+                          brightness: Brightness.light,
+                        ),
+                        useMaterial3: true,
+                      ),
+                      child: child!,
+                    );
+                  }
+              );
+
+              if (picked != null) {
+                setState(() => start = picked);
+              }
+            }
+
+            // Endzeit wählen
+            Future<void> pickEnd() async {
+              final picked = await showTimePicker(
+                  context: context,
+                  initialTime: end ?? const TimeOfDay(hour: 17, minute: 0),
+                  helpText: "Wähle eine Uhrzeit",
+                  cancelText: "Abbrechen",
+                  confirmText: "OK",
+                  hourLabelText: "Stunde",
+                  minuteLabelText: "Minute",
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.fromSeed(
+                          seedColor: Colors.blue,
+                          brightness: Brightness.light,
+                        ),
+                        useMaterial3: true,
+                      ),
+                      child: child!,
+                    );
+                  }
+              );
+
+              if (picked != null) {
+                setState(() => end = picked);
+              }
+            }
+
+            // Typ ändern
+            void onTypeChanged(DayType? value) {
+              if (value == null) return;
+
+              setState(() {
+                selectedType = value;
+
+                if (selectedType != DayType.workday) {
+                  start = null;
+                  end = null;
+                  breakController.text = '0';
+                }
+              });
+            }
+
+            // Dialog schließen
+            void onCancel() {
+              Navigator.of(dialogContext).pop(false);
+            }
+
+            // Speichern + Validierung
+            void onSave() {
+              if (selectedType == DayType.workday &&
+                  (start == null || end == null)) {
+                ScaffoldMessenger.of(parentContext).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bitte Start- und Endzeit setzen.'),
+                  ),
+                );
+                return;
+              }
+
+              final breakMinutes = int.tryParse(breakController.text) ?? 0;
+
+              if (selectedType == DayType.workday) {
+                final startDateTime = DateTime(
+                  day.date.year,
+                  day.date.month,
+                  day.date.day,
+                  start!.hour,
+                  start!.minute,
+                );
+
+                final endDateTime = DateTime(
+                  day.date.year,
+                  day.date.month,
+                  day.date.day,
+                  end!.hour,
+                  end!.minute,
+                );
+
+                if (!endDateTime.isAfter(startDateTime)) {
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Endzeit muss nach der Startzeit liegen.'),
+                    ),
+                  );
+                  return;
+                }
+
+                final maxBreak = endDateTime
+                    .difference(startDateTime)
+                    .inMinutes;
+
+                if (breakMinutes > maxBreak) {
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Pause darf nicht länger als die Arbeitszeit sein.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+              }
+
+              //bestehende Save-Logik
+              _updateDayDetails(
+                date: day.date,
+                type: selectedType,
+                start: start,
+                end: end,
+                breakMinutes: breakMinutes,
+              );
+
+              Navigator.of(dialogContext).pop(true);
+            }
+
+            return DayEditDialog(
+              selectedType: selectedType,
+              start: start,
+              end: end,
+              breakController: breakController,
+              dayTypeLabel: getDayTypeLabel,
+              formatTime: formatTime,
+              onTypeChanged: onTypeChanged,
+              onPickStart: pickStart,
+              onPickEnd: pickEnd,
+              onCancel: onCancel,
+              onSave: onSave,
+            );
+          },
+        );
+      },
+    );
+  }
 }
