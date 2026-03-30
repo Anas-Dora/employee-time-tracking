@@ -1,3 +1,4 @@
+import 'package:employee_time_tracking/dayOverview/day_overview.dart';
 import 'package:employee_time_tracking/monthlyOverview/work_day.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -275,30 +276,62 @@ class MonthlyOverviewScreen extends ConsumerWidget {
     WorkDay day,
     MonthlyOverviewVM vm,
   ) {
+    Widget resolveCell(Widget Function() defaultBuilder) {
+      switch (day.type) {
+        case DayType.vacation:
+          return vacationCell();
+        case DayType.sick:
+          return sickCell();
+        default:
+          return defaultBuilder();
+      }
+    }
+
     return TableRow(
       children: [
-        _buildLongPressCell(
+        _wrap(
           context,
           ref,
           day,
           vm,
           dateCell(DateFormat('dd. MMM, E', 'de_DE').format(day.date)),
         ),
-        _buildLongPressCell(context, ref, day, vm, cell(day.start)),
-        _buildLongPressCell(context, ref, day, vm, cell(day.end)),
-        _buildLongPressCell(context, ref, day, vm, cell(day.pause)),
-        _buildLongPressCell(context, ref, day, vm, toTalWorkCell(day.total)),
-        _buildLongPressCell(
+
+        _wrap(context, ref, day, vm, resolveCell(() => cell(day.start))),
+
+        _wrap(context, ref, day, vm, resolveCell(() => cell(day.end))),
+
+        _wrap(context, ref, day, vm, resolveCell(() => cell(day.pause))),
+
+        _wrap(
           context,
           ref,
           day,
           vm,
-          day.diff == '+00:00' || day.diff == '-00:00'
-              ? cell(day.diff)
+          resolveCell(() => toTalWorkCell(day.total)),
+        ),
+
+        _wrap(
+          context,
+          ref,
+          day,
+          vm,
+          (day.diff == '+00:00' || day.diff == '-00:00')
+              ? resolveCell(() => cell(day.diff))
               : diffCell(day.diff),
         ),
       ],
     );
+  }
+
+  static Widget _wrap(
+    BuildContext context,
+    WidgetRef ref,
+    WorkDay day,
+    MonthlyOverviewVM vm,
+    Widget child,
+  ) {
+    return _buildLongPressCell(context, ref, day, vm, child);
   }
 
   static Widget _buildLongPressCell(
@@ -315,7 +348,6 @@ class MonthlyOverviewScreen extends ConsumerWidget {
       child: child,
     );
   }
-
 
   static Widget _infoBox(String title, double value) {
     return Container(
@@ -404,6 +436,36 @@ class MonthlyOverviewScreen extends ConsumerWidget {
   static Widget cell(String text) {
     return Center(
       child: Padding(padding: const EdgeInsets.all(8.0), child: Text(text)),
+    );
+  }
+
+  static Widget vacationCell() {
+    return Container(
+      color: Color(0xFFAFE9FA),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            "-",
+            style: GoogleFonts.inter(fontSize: 14, color: Color(0xFF2F6A79)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget sickCell() {
+    return Container(
+      color: Color(0xFFFFE5E5),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            "-",
+            style: GoogleFonts.inter(fontSize: 14, color: Color(0xFFB00020)),
+          ),
+        ),
+      ),
     );
   }
 
