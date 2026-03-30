@@ -1,9 +1,9 @@
 import 'package:employee_time_tracking/AppColors.dart';
+import 'package:employee_time_tracking/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'Profile/profile_screen.dart';
 import 'dayOverview/weekly_overview_screen.dart';
 import 'homePage/home_page_screen.dart';
 import 'monthlyOverview/monthly_overview_screen.dart';
@@ -44,10 +44,10 @@ class _PagesState extends State<Pages> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    MonthlyOverviewScreen(),
+    ProfileScreen(),
     HomePageScreen(),
     WeeklyOverviewScreen(),
-    ProfileScreen(),
+    MonthlyOverviewScreen(),
   ];
 
   void _onItemTapped(int index) {
