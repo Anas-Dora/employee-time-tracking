@@ -28,9 +28,9 @@ class HomePageScreen extends ConsumerWidget {
         ),
         backgroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(12),
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(12),
           child: Column(
             children: [
               Text(

@@ -44,9 +44,9 @@ class _PagesState extends State<Pages> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    WeeklyOverviewScreen(),
-    HomePageScreen(),
     MonthlyOverviewScreen(),
+    HomePageScreen(),
+    WeeklyOverviewScreen(),
     ProfileScreen(),
   ];
 
