@@ -44,21 +44,31 @@ class Pages extends StatefulWidget {
 class _PagesState extends State<Pages> {
   int _selectedIndex = 0;
 
+  void _reloadTab(int index) {
+    final container = ProviderScope.containerOf(context, listen: false);
+
+    if (index == 0) {
+      container.read(homeViewModelProvider.notifier).loadToday();
+    } else if (index == 1) {
+      container.read(weeklyOverviewProvider.notifier).loadWeek();
+    } else if (index == 2) {
+      container.read(monthlyOverviewProvider.notifier).loadMonth();
+    }
+  }
+
   void _onItemTapped(int index) {
     if (index == _selectedIndex) {
-      final container = ProviderScope.containerOf(context, listen: false);
-      if (index == 0) {
-        container.read(homeViewModelProvider.notifier).loadToday();
-      } else if (index == 1) {
-        container.read(weeklyOverviewProvider.notifier).loadWeek();
-      } else if (index == 2) {
-        container.read(monthlyOverviewProvider.notifier).loadMonth();
-      }
+      _reloadTab(index);
       return;
     }
 
     setState(() {
       _selectedIndex = index;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _reloadTab(index);
     });
   }
 
