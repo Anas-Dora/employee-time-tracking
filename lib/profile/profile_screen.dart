@@ -1,5 +1,6 @@
 import 'package:employee_time_tracking/profile/profile.dart';
 import 'package:employee_time_tracking/profile/profile_vm.dart';
+import 'package:employee_time_tracking/widgets/yearly_pdf_export_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -44,7 +45,14 @@ class ProfileScreen extends ConsumerWidget {
                 width: 290,
                 height: 55,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => YearlyPdfExportDialog(
+                        profile: profile,
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,

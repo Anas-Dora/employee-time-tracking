@@ -67,11 +67,19 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
     List<WorkDay> days = [];
     for (int i = 0; i < lastDay.day; i++) {
       final day = firstDay.add(Duration(days: i));
+      if (_isWeekend(day)) {
+        continue;
+      }
       final key = '${day.year}-${day.month}-${day.day}';
       days.add(dbMap[key] ?? WorkDay(date: day));
     }
 
     state = state.copyWith(days: days);
+  }
+
+  bool _isWeekend(DateTime day) {
+    return day.weekday == DateTime.saturday ||
+        day.weekday == DateTime.sunday;
   }
 
   Future<void> nextMonth() async {
