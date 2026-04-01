@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../dayOverview/day_overview.dart';
 import '../widgets/day_edit_dialog.dart';
+import 'MonthlyNotification.dart';
 
 
 final monthlyOverviewProvider =
@@ -34,6 +35,8 @@ class MonthlyOverviewState {
 }
 
 class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
+  static const double overtimeGoalHours = 8.0;
+
   MonthlyOverviewVM()
       : super(
           MonthlyOverviewState(
@@ -221,6 +224,88 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
       _sumMinutes(state.days.map((day) => day.diff), allowSignedValues: true) /
           60;
 
+  List<MonthlyNotification> get notifications => buildNotifications(
+        days: state.days,
+        overtimeHours: overtime,
+        currentMonth: state.currentMonth,
+      );
+
+  List<String> get notificationMessages =>
+      notifications.map((notification) => notification.message).toList();
+
+  static List<MonthlyNotification> buildNotifications({
+    required List<WorkDay> days,
+    required double overtimeHours,
+    required DateTime currentMonth,
+  }) {
+    final notifications = <MonthlyNotification>[];
+    final relevantDays = _relevantNotificationDays(days, currentMonth);
+    final monthLabel = DateFormat('MMMM yyyy', 'de_DE').format(currentMonth);
+
+    final missingEntryDays = relevantDays
+        .where((day) => day.type == DayType.none)
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    final incompleteWorkDays = relevantDays
+        .where(
+          (day) =>
+              day.type == DayType.workday &&
+              (_isMissingValue(day.start) || _isMissingValue(day.end)),
+        )
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    if (missingEntryDays.isNotEmpty) {
+      notifications.add(
+        MonthlyNotification(
+          type: MonthlyNotificationType.missingEntry,
+          message: _buildMissingEntryMessage(missingEntryDays),
+        ),
+      );
+    }
+
+    if (incompleteWorkDays.isNotEmpty) {
+      notifications.add(
+        MonthlyNotification(
+          type: MonthlyNotificationType.incompleteEntry,
+          message: _buildIncompleteEntryMessage(incompleteWorkDays),
+        ),
+      );
+    }
+
+    if (overtimeHours >= overtimeGoalHours) {
+      notifications.add(
+        MonthlyNotification(
+          type: MonthlyNotificationType.overtimeGoal,
+          message:
+              'Ihr Überstundenguthaben hat mit ${_formatHours(overtimeHours)} h den Zielwert von ${_formatHours(overtimeGoalHours)} h erreicht.',
+        ),
+      );
+    }
+
+    if (overtimeHours < 0) {
+      notifications.add(
+        MonthlyNotification(
+          type: MonthlyNotificationType.negativeOvertime,
+          message:
+              'Sie haben aktuell ${_formatHours(overtimeHours.abs())} Minusstunden in $monthLabel.',
+        ),
+      );
+    }
+
+    if (notifications.isEmpty) {
+      notifications.add(
+        MonthlyNotification(
+          type: MonthlyNotificationType.none,
+          message: 'Für $monthLabel liegen aktuell keine offenen Hinweise vor.',
+        ),
+      );
+    }
+
+    return notifications;
+  }
+
   int _sumMinutes(Iterable<String> values,
       {required bool allowSignedValues}) {
     return values.fold<int>(0, (sum, value) {
@@ -247,6 +332,72 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
 
     final totalMinutes = (hours * 60) + minutes;
     return sign == '-' ? -totalMinutes : totalMinutes;
+  }
+
+  static List<WorkDay> _relevantNotificationDays(
+    List<WorkDay> days,
+    DateTime currentMonth,
+  ) {
+    final now = DateTime.now();
+    final selectedMonth = DateTime(currentMonth.year, currentMonth.month);
+    final thisMonth = DateTime(now.year, now.month);
+
+    if (selectedMonth.isAfter(thisMonth)) {
+      return const <WorkDay>[];
+    }
+
+    final cutoff = _isSameMonth(currentMonth, now)
+        ? DateTime(now.year, now.month, now.day - 1)
+        : DateTime(currentMonth.year, currentMonth.month + 1, 0);
+
+    return days.where((day) => !day.date.isAfter(cutoff)).toList();
+  }
+
+  static bool _isSameMonth(DateTime first, DateTime second) {
+    return first.year == second.year && first.month == second.month;
+  }
+
+  static bool _isMissingValue(String value) {
+    final normalized = value.trim();
+    return normalized.isEmpty || normalized == '-' || normalized == '--:--';
+  }
+
+  static String _buildMissingEntryMessage(List<WorkDay> days) {
+    final formattedDays = _formatDayList(days);
+
+    if (days.length == 1) {
+      return 'Für den $formattedDays fehlt noch ein Eintrag. Bitte nachtragen.';
+    }
+
+    return 'Für folgende Tage fehlen noch Einträge: $formattedDays.';
+  }
+
+  static String _buildIncompleteEntryMessage(List<WorkDay> days) {
+    final formattedDays = _formatDayList(days);
+
+    if (days.length == 1) {
+      return 'Am $formattedDays ist die Arbeitszeit unvollständig. Bitte Start- und Endzeit prüfen.';
+    }
+
+    return 'An diesen Tagen sind Arbeitszeiten unvollständig: $formattedDays.';
+  }
+
+  static String _formatDayList(List<WorkDay> days, {int maxVisibleDays = 3}) {
+    final formatter = DateFormat('dd. MMMM', 'de_DE');
+    final visibleDays = days.take(maxVisibleDays).map((day) {
+      return formatter.format(day.date);
+    }).toList();
+
+    final remainingDays = days.length - visibleDays.length;
+    if (remainingDays > 0) {
+      visibleDays.add('und $remainingDays weitere');
+    }
+
+    return visibleDays.join(', ');
+  }
+
+  static String _formatHours(double value) {
+    return NumberFormat('0.0', 'de_DE').format(value);
   }
 
   TimeOfDay? parseTimeOfDay(String time) {

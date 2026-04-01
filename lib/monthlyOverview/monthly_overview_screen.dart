@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../AppColors.dart';
+import 'MonthlyNotification.dart';
 import 'monthly_overview_vm.dart';
 
 class MonthlyOverviewScreen extends ConsumerWidget {
@@ -15,6 +16,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(monthlyOverviewProvider);
     final vm = ref.read(monthlyOverviewProvider.notifier);
+    final notifications = vm.notifications;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -176,91 +178,38 @@ class MonthlyOverviewScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(24.0),
                 width: double.infinity,
-                height: 255,
                 decoration: BoxDecoration(
                   color: Color(0xFFF3F4F5),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.notifications_active_outlined,
-                            size: 24,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.notifications_active_outlined,
+                          size: 24,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Monatliche Benachrichtigungen',
+                          style: GoogleFonts.manrope(
                             color: AppColors.primary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                          SizedBox(width: 10),
-                          Text(
-                            'Monatliche Benachrichtigungen',
-                            style: GoogleFonts.manrope(
-                              color: AppColors.primary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(16.0),
-                        width: double.infinity,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline,
-                              size: 24,
-                              color: Color(0xFF2F6A79),
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Ihr Überstundenguthaben für September \nhat den Zielwert erreicht.',
-                              style: GoogleFonts.inter(
-                                color: AppColors.secondaryTextColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(16.0),
-                        width: double.infinity,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              size: 24,
-                              color: Color(0xFFBA1A1A),
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'Fehlende Ausstempelung am 15. September. \nBitte überprüfen Sie dies manuell.',
-                              style: GoogleFonts.inter(
-                                color: AppColors.secondaryTextColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    for (int i = 0; i < notifications.length; i++) ...[
+                      _notificationCard(notifications[i]),
+                      if (i < notifications.length - 1)
+                        const SizedBox(height: 12),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -347,6 +296,68 @@ class MonthlyOverviewScreen extends ConsumerWidget {
       },
       child: child,
     );
+  }
+
+  static Widget _notificationCard(MonthlyNotification notification) {
+    final config = _notificationVisuals(notification.type);
+
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            config.icon,
+            size: 24,
+            color: config.color,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              notification.message,
+              style: GoogleFonts.inter(
+                color: AppColors.secondaryTextColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static _NotificationVisuals _notificationVisuals(
+    MonthlyNotificationType type,
+  ) {
+    switch (type) {
+      case MonthlyNotificationType.missingEntry:
+        return const _NotificationVisuals(
+          icon: Icons.edit_calendar_outlined,
+          color: Color(0xFF8A5A00),
+        );
+      case MonthlyNotificationType.incompleteEntry:
+      case MonthlyNotificationType.negativeOvertime:
+        return const _NotificationVisuals(
+          icon: Icons.error_outline,
+          color: Color(0xFFBA1A1A),
+        );
+      case MonthlyNotificationType.overtimeGoal:
+        return const _NotificationVisuals(
+          icon: Icons.check_circle_outline,
+          color: Color(0xFF2F6A79),
+        );
+      case MonthlyNotificationType.none:
+        return const _NotificationVisuals(
+          icon: Icons.notifications_none_outlined,
+          color: AppColors.primary,
+        );
+    }
   }
 
   static Widget _infoBox(String title, double value) {
@@ -527,3 +538,14 @@ class MonthlyOverviewScreen extends ConsumerWidget {
     );
   }
 }
+
+class _NotificationVisuals {
+  final IconData icon;
+  final Color color;
+
+  const _NotificationVisuals({
+    required this.icon,
+    required this.color,
+  });
+}
+
