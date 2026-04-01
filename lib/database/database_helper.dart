@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
+  static const int _dbVersion = 2;
 
   DatabaseHelper._internal();
 
@@ -19,8 +20,9 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: _dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -47,6 +49,28 @@ class DatabaseHelper {
         employee_id TEXT NOT NULL DEFAULT '',
         department TEXT NOT NULL DEFAULT '',
         reminders_enabled INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+
+    await _createHolidaysTable(db);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _createHolidaysTable(db);
+    }
+  }
+
+  Future<void> _createHolidaysTable(Database db) async {
+    // IF NOT EXISTS macht die Migration idempotent und sicher bei Mehrfachaufrufen.
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS holidays (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        name TEXT NOT NULL,
+        bundesland TEXT NOT NULL,
+        cached_at TEXT NOT NULL,
+        UNIQUE(date, bundesland)
       )
     ''');
   }
@@ -129,6 +153,100 @@ class DatabaseHelper {
       profile,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  // ────────────── HOLIDAYS (CACHING) ──────────────
+
+  /// Feiertag speichern (Caching)
+  Future<void> saveHoliday({
+    required String date,
+    required String name,
+    required String bundesland,
+  }) async {
+    final db = await database;
+    await db.insert(
+      'holidays',
+      {
+        'date': date,
+        'name': name,
+        'bundesland': bundesland,
+        'cached_at': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Mehrere Feiertage auf einmal speichern
+  Future<void> saveHolidays({
+    required List<Map<String, dynamic>> holidays,
+    required String bundesland,
+  }) async {
+    final db = await database;
+    final batch = db.batch();
+
+    for (final holiday in holidays) {
+      batch.insert(
+        'holidays',
+        {
+          'date': holiday['date'],
+          'name': holiday['name'],
+          'bundesland': bundesland,
+          'cached_at': DateTime.now().toIso8601String(),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    await batch.commit();
+  }
+
+  /// Prüfen, ob ein Feiertag bereits gecacht ist
+  Future<bool> isHolidayInCache({
+    required String date,
+    required String bundesland,
+  }) async {
+    final db = await database;
+    final results = await db.query(
+      'holidays',
+      where: 'date = ? AND bundesland = ?',
+      whereArgs: [date, bundesland],
+    );
+    return results.isNotEmpty;
+  }
+
+  /// Feiertag aus dem Cache abrufen
+  Future<Map<String, dynamic>?> getHolidayFromCache({
+    required String date,
+    required String bundesland,
+  }) async {
+    final db = await database;
+    final results = await db.query(
+      'holidays',
+      where: 'date = ? AND bundesland = ?',
+      whereArgs: [date, bundesland],
+    );
+    return results.isNotEmpty ? results.first : null;
+  }
+
+  /// Alle Feiertage für ein Jahr und Bundesland abrufen
+  Future<List<Map<String, dynamic>>> getHolidaysForYear({
+    required int year,
+    required String bundesland,
+  }) async {
+    final db = await database;
+    final from = DateTime(year, 1, 1).toIso8601String();
+    final to = DateTime(year, 12, 31, 23, 59, 59).toIso8601String();
+    return await db.query(
+      'holidays',
+      where: 'date BETWEEN ? AND ? AND bundesland = ?',
+      whereArgs: [from, to, bundesland],
+    );
+  }
+
+  /// Cache leeren
+  Future<void> clearHolidayCache() async {
+    final db = await database;
+    await db.delete('holidays');
   }
 }
 

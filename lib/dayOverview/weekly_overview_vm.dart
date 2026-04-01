@@ -2,6 +2,7 @@
 import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/widgets/day_edit_dialog.dart';
 import 'package:employee_time_tracking/dayOverview/week_overview.dart';
+import 'package:employee_time_tracking/services/holiday_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -14,9 +15,15 @@ final weeklyOverviewProvider =
 
 class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
   final int weeklyGoalHours; // Wochenziel in Stunden
+  final String bundesland;
+  final HolidayService _holidayService;
 
-  WeeklyOverviewViewModel({this.weeklyGoalHours = 40})
-    : super(_buildEmptyWeek(DateTime.now())) {
+  WeeklyOverviewViewModel({
+    this.weeklyGoalHours = 40,
+    this.bundesland = 'BW',
+    HolidayService? holidayService,
+  }) : _holidayService = holidayService ?? HolidayService(),
+       super(_buildEmptyWeek(DateTime.now())) {
     _loadWeekFromDb(DateTime.now());
   }
 
@@ -61,17 +68,34 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
       dbMap[key] = day;
     }
 
-    final List<DayOverview> days = List.generate(5, (i) {
+    final List<DayOverview> baseDays = List.generate(5, (i) {
       final d = monday.add(Duration(days: i));
       final key = '${d.year}-${d.month}-${d.day}';
-      return dbMap[key] ??
-          DayOverview(date: d, type: DayType.none);
+      return dbMap[key] ?? DayOverview(date: d, type: DayType.none);
+    });
+
+    final holidayFlags = await Future.wait(
+      baseDays.map((day) => _isHoliday(day.date)),
+    );
+
+    final List<DayOverview> days = List.generate(baseDays.length, (i) {
+      final day = baseDays[i];
+      if (!holidayFlags[i]) return day;
+      return day.copyWith(
+        isHoliday: true,
+        type: DayType.none,
+        startTime: null,
+        endTime: null,
+        breakDuration: null,
+      );
     });
 
     state = WeekOverview(startDate: monday, endDate: friday, days: days);
   }
 
   Future<void> toggleDayType(DateTime date, DayType targetType) async {
+    if (!await _ensureNotHoliday(date)) return;
+
     final updatedDays = state.days.map((day) {
       if (!_isSameDay(day.date, date)) return day;
 
@@ -93,6 +117,8 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
     required TimeOfDay? end,
     required int breakMinutes,
   }) async {
+    if (!await _ensureNotHoliday(date)) return;
+
     final updatedDays = state.days.map((day) {
       if (!_isSameDay(day.date, date)) return day;
 
@@ -148,6 +174,39 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
         first.day == second.day;
   }
 
+  Future<bool> _ensureNotHoliday(DateTime date) async {
+    if (!await _isHoliday(date)) return true;
+    _markHolidayInState(date);
+    return false;
+  }
+
+  void _markHolidayInState(DateTime date) {
+    final updatedDays = state.days.map((day) {
+      if (!_isSameDay(day.date, date)) return day;
+
+      return day.copyWith(
+        isHoliday: true,
+        type: DayType.none,
+        startTime: null,
+        endTime: null,
+        breakDuration: null,
+      );
+    }).toList();
+
+    state = state.copyWith(days: updatedDays);
+  }
+
+  Future<bool> _isHoliday(DateTime date) async {
+    try {
+      return await _holidayService.isHoliday(
+        date: date,
+        bundesland: bundesland,
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> previousWeek() async {
     final newDate = state.startDate.subtract(const Duration(days: 7));
     await _loadWeekFromDb(newDate);
@@ -162,6 +221,8 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
     BuildContext parentContext,
     DayOverview day,
   ) async {
+    if (!await _ensureNotHoliday(day.date)) return;
+
     DayType selectedType = day.type;
 
     TimeOfDay? start = day.startTime != null

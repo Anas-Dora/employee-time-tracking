@@ -8,6 +8,7 @@ class WorkDay {
   final String total;
   final String diff;
   final DayType type;
+  final bool isHoliday;
 
   WorkDay({
     required this.date,
@@ -17,6 +18,7 @@ class WorkDay {
     this.total = '-',
     this.diff = '-',
     this.type = DayType.none,
+    this.isHoliday = false,
   });
 
   WorkDay copyWith({
@@ -27,6 +29,7 @@ class WorkDay {
     String? total,
     String? diff,
     DayType? type,
+    bool? isHoliday,
   }) {
     return WorkDay(
       date: date ?? this.date,
@@ -36,6 +39,7 @@ class WorkDay {
       total: total ?? this.total,
       diff: diff ?? this.diff,
       type: type ?? this.type,
+      isHoliday: isHoliday ?? this.isHoliday,
     );
   }
 
@@ -104,6 +108,7 @@ class WorkDay {
     return WorkDay(
       date: date,
       type: type,
+      isHoliday: (map['is_holiday'] as int?) == 1,
       start: startStr,
       end: endStr,
       pause: pauseStr,

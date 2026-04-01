@@ -253,7 +253,15 @@ class WeeklyOverviewScreen extends ConsumerWidget {
     Color secondaryTextColor;
     String title;
 
-    switch (day.type) {
+    if (day.isHoliday) {
+      cardColor = Color(0xFFEDE7F6);
+      borderColor = Color(0x1A2F6A79);
+      deteCardColor = Color(0xFF4527A0);
+      primaryTextColor = Color(0xFF4527A0);
+      secondaryTextColor = Color(0xB34527A0);
+      title = 'Feiertag';
+    } else {
+      switch (day.type) {
       case DayType.workday:
         cardColor = Colors.white;
         borderColor = Colors.white;
@@ -285,97 +293,97 @@ class WeeklyOverviewScreen extends ConsumerWidget {
         primaryTextColor = Color(0xFF002863);
         secondaryTextColor = AppColors.secondaryTextColor;
         title = "Werktag";
+      }
     }
 
     return Container(
-            width: double.infinity,
-            height: 170,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: cardColor,
-              border: Border.all(color: borderColor, width: 1.5),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
+      width: double.infinity,
+      height: 170,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: cardColor,
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 75,
+                height: 75,
+                decoration: BoxDecoration(
+                  color: deteCardColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 75,
-                      height: 75,
-                      decoration: BoxDecoration(
-                        color: deteCardColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            DateFormat('d').format(day.date),
-                            style: GoogleFonts.manrope(
-                              textStyle: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            DateFormat(
-                              'E',
-                              "de_DE",
-                            ).format(day.date).toUpperCase(),
-                            style: GoogleFonts.inter(
-                              textStyle: TextStyle(
-                                color: Color(0xFFF8F9FA),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
+                    Text(
+                      DateFormat('d').format(day.date),
+                      style: GoogleFonts.manrope(
+                        textStyle: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                    SizedBox(width: 24),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              color: primaryTextColor,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w500,
-                            ),
+                    Text(
+                      DateFormat('E', "de_DE").format(day.date).toUpperCase(),
+                      style: GoogleFonts.inter(
+                        textStyle: TextStyle(
+                          color: Color(0xFFF8F9FA),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 24),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      textStyle: TextStyle(
+                        color: primaryTextColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 3.5),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 16,
+                        color: secondaryTextColor,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        "${day.type == DayType.workday && day.startTime != null ? DateFormat('HH:mm').format(day.startTime!) : '00:00'} - ${day.type == DayType.workday && day.endTime != null ? DateFormat('HH:mm').format(day.endTime!) : '00:00'}",
+                        style: GoogleFonts.inter(
+                          textStyle: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
-                        SizedBox(height: 3.5),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              size: 16,
-                              color: secondaryTextColor,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              "${day.type == DayType.workday && day.startTime != null ? DateFormat('HH:mm').format(day.startTime!) : '00:00'} - ${day.type == DayType.workday && day.endTime != null ? DateFormat('HH:mm').format(day.endTime!) : '00:00'}",
-                              style: GoogleFonts.inter(
-                                textStyle: TextStyle(
-                                  color: secondaryTextColor,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(width: 72),
-                    IconButton(
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(width: 72),
+              day.isHoliday
+                  ? Text("")
+                  : IconButton(
                       onPressed: () {
                         vm.showEditDialog(context, day);
                       },
@@ -385,10 +393,12 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                         color: secondaryTextColor,
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                Row(
+            ],
+          ),
+          SizedBox(height: 16),
+          day.isHoliday
+              ? Text("")
+              : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Column(

@@ -226,6 +226,10 @@ class MonthlyOverviewScreen extends ConsumerWidget {
     MonthlyOverviewVM vm,
   ) {
     Widget resolveCell(Widget Function() defaultBuilder) {
+      if (day.isHoliday) {
+        return holidayCell();
+      }
+
       switch (day.type) {
         case DayType.vacation:
           return vacationCell();
@@ -480,6 +484,21 @@ class MonthlyOverviewScreen extends ConsumerWidget {
     );
   }
 
+  static Widget holidayCell() {
+    return Container(
+      color: Color(0xFFEDE7F6),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            "-",
+            style: GoogleFonts.inter(fontSize: 14, color: Color(0xFF4527A0)),
+          ),
+        ),
+      ),
+    );
+  }
+
   static Widget toTalWorkCell(String text) {
     return Center(
       child: Padding(
@@ -548,4 +567,3 @@ class _NotificationVisuals {
     required this.color,
   });
 }
-

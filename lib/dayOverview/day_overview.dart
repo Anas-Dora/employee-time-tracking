@@ -4,6 +4,7 @@ enum DayType { workday, sick, vacation, none }
 class DayOverview {
   final DateTime date;
   final DayType type;
+  final bool isHoliday;
   final DateTime? startTime;
   final DateTime? endTime;
   final Duration? breakDuration;
@@ -11,6 +12,7 @@ class DayOverview {
   DayOverview({
     required this.date,
     required this.type,
+    this.isHoliday = false,
     this.startTime,
     this.endTime,
     this.breakDuration,
@@ -19,6 +21,7 @@ class DayOverview {
   DayOverview copyWith({
     DateTime? date,
     DayType? type,
+    bool? isHoliday,
     DateTime? startTime,
     DateTime? endTime,
     Duration? breakDuration,
@@ -26,6 +29,7 @@ class DayOverview {
     return DayOverview(
       date: date ?? this.date,
       type: type ?? this.type,
+      isHoliday: isHoliday ?? this.isHoliday,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       breakDuration: breakDuration ?? this.breakDuration,
@@ -33,6 +37,7 @@ class DayOverview {
   }
 
   Duration? get workDuration {
+    if (isHoliday) return null;
     if (type != DayType.workday) return null;
     if (startTime == null || endTime == null) return null;
 
@@ -58,6 +63,7 @@ class DayOverview {
         (e) => e.name == (map['type'] as String),
         orElse: () => DayType.none,
       ),
+      isHoliday: (map['is_holiday'] as int?) == 1,
       startTime: map['start_time'] != null
           ? DateTime.parse(map['start_time'] as String)
           : null,

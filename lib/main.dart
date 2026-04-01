@@ -3,6 +3,8 @@ import 'package:employee_time_tracking/dayOverview/weekly_overview_vm.dart';
 import 'package:employee_time_tracking/homePage/home_viewmodel.dart';
 import 'package:employee_time_tracking/monthlyOverview/monthly_overview_vm.dart';
 import 'package:employee_time_tracking/profile/profile_screen.dart';
+import 'package:employee_time_tracking/services/holiday_cache_initializer.dart';
+import 'package:employee_time_tracking/services/holiday_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -15,6 +17,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await initializeDateFormatting('de_DE', null);
+  
+  // Initialisiere Feiertag-Cache im Hintergrund
+  HolidayCacheInitializer.initializeForState('BW');
+
   runApp(ProviderScope(child: MyApp()));
 }
 

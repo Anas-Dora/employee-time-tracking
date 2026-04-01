@@ -1,5 +1,6 @@
 import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/monthlyOverview/work_day.dart';
+import 'package:employee_time_tracking/services/holiday_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
@@ -36,9 +37,14 @@ class MonthlyOverviewState {
 
 class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
   static const double overtimeGoalHours = 8.0;
+  final String bundesland;
+  final HolidayService _holidayService;
 
-  MonthlyOverviewVM()
-      : super(
+  MonthlyOverviewVM({
+    this.bundesland = 'BW',
+    HolidayService? holidayService,
+  }) : _holidayService = holidayService ?? HolidayService(),
+       super(
           MonthlyOverviewState(
             currentMonth: DateTime.now(),
             days: [],
@@ -67,15 +73,33 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
       dbMap[dateKey] = computed;
     }
 
-    List<WorkDay> days = [];
+    List<WorkDay> baseDays = [];
     for (int i = 0; i < lastDay.day; i++) {
       final day = firstDay.add(Duration(days: i));
       if (_isWeekend(day)) {
         continue;
       }
       final key = '${day.year}-${day.month}-${day.day}';
-      days.add(dbMap[key] ?? WorkDay(date: day));
+      baseDays.add(dbMap[key] ?? WorkDay(date: day));
     }
+
+    final holidayFlags = await Future.wait(
+      baseDays.map((day) => _isHoliday(day.date)),
+    );
+
+    final days = List<WorkDay>.generate(baseDays.length, (i) {
+      final day = baseDays[i];
+      if (!holidayFlags[i]) return day;
+      return day.copyWith(
+        isHoliday: true,
+        type: DayType.none,
+        start: '-',
+        end: '-',
+        pause: '-',
+        total: '-',
+        diff: '-',
+      );
+    });
 
     state = state.copyWith(days: days);
   }
@@ -147,6 +171,8 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
     required TimeOfDay? end,
     required int breakMinutes,
   }) async {
+    if (!await _ensureNotHoliday(date)) return;
+
     // Standardarbeitszeit in Minuten (8 Stunden)
     const int targetMinutes = 8 * 60;
 
@@ -435,6 +461,8 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
       BuildContext parentContext,
       WorkDay day,
       ) async {
+    if (!await _ensureNotHoliday(day.date)) return;
+
     DayType selectedType = day.type;
 
     TimeOfDay? start = parseTimeOfDay(day.start);
@@ -614,5 +642,44 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
         );
       },
     );
+  }
+
+  Future<bool> _ensureNotHoliday(DateTime date) async {
+    if (!await _isHoliday(date)) return true;
+    _markHolidayInState(date);
+    return false;
+  }
+
+  void _markHolidayInState(DateTime date) {
+    final updatedDays = state.days.map((day) {
+      if (day.date.year != date.year ||
+          day.date.month != date.month ||
+          day.date.day != date.day) {
+        return day;
+      }
+
+      return day.copyWith(
+        isHoliday: true,
+        type: DayType.none,
+        start: '-',
+        end: '-',
+        pause: '-',
+        total: '-',
+        diff: '-',
+      );
+    }).toList();
+
+    state = state.copyWith(days: updatedDays);
+  }
+
+  Future<bool> _isHoliday(DateTime date) async {
+    try {
+      return await _holidayService.isHoliday(
+        date: date,
+        bundesland: bundesland,
+      );
+    } catch (_) {
+      return false;
+    }
   }
 }
