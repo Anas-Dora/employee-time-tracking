@@ -3,6 +3,8 @@ import 'dart:async';
 
 import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/homePage/work_time.dart';
+import 'package:employee_time_tracking/profile/profile_vm.dart';
+import 'package:employee_time_tracking/services/notification_service.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -147,6 +149,8 @@ class HomeViewModel extends StateNotifier<HomeState> {
     } else if (isOnBreak) {
       _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tickBreak());
     }
+
+    _syncScheduledNotifications();
   }
 
   // ──────────────────────────────────────────────────────────────
@@ -225,6 +229,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
         isOnBreak: false,
         startedAt: startedAt,
       );
+      _syncScheduledNotifications();
     }
   }
 
@@ -322,6 +327,14 @@ class HomeViewModel extends StateNotifier<HomeState> {
       workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
       breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
     );
+
+    // Benachrichtigungs-Flags für den nächsten Arbeitstag zurücksetzen
+    NotificationService.instance.resetDailyFlags();
+    await NotificationService.instance.syncBackgroundSchedules(
+      isRunning: false,
+      workSeconds: 0,
+      breakSeconds: 0,
+    );
   }
 
   // ──────────────────────────────────────────────────────────────
@@ -335,7 +348,17 @@ class HomeViewModel extends StateNotifier<HomeState> {
     int h = wt.hours;
     if (s >= 60) { s = 0; m++; }
     if (m >= 60) { m = 0; h++; }
-    state = state.copyWith(workTime: wt.copyWith(hours: h, minutes: m, seconds: s));
+    final newWorkTime = wt.copyWith(hours: h, minutes: m, seconds: s);
+    state = state.copyWith(workTime: newWorkTime);
+
+    // Benachrichtigungen prüfen
+    final workSec = h * 3600 + m * 60 + s;
+    final bt = state.breakTime;
+    final breakSec = bt.hours * 3600 + bt.minutes * 60 + bt.seconds;
+    NotificationService.instance.checkAndNotify(
+      workSeconds: workSec,
+      breakSeconds: breakSec,
+    );
   }
 
   void _tickBreak() {
@@ -377,6 +400,19 @@ class HomeViewModel extends StateNotifier<HomeState> {
     return 'Noch ${remainingHours}h ${remainingMinutes}m';
   }
 
+  void _syncScheduledNotifications() {
+    final wt = state.workTime;
+    final bt = state.breakTime;
+    final workSec = wt.hours * 3600 + wt.minutes * 60 + wt.seconds;
+    final breakSec = bt.hours * 3600 + bt.minutes * 60 + bt.seconds;
+
+    NotificationService.instance.syncBackgroundSchedules(
+      isRunning: state.isRunning,
+      workSeconds: workSec,
+      breakSeconds: breakSec,
+    );
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -385,5 +421,18 @@ class HomeViewModel extends StateNotifier<HomeState> {
 }
 
 final homeViewModelProvider = StateNotifierProvider<HomeViewModel, HomeState>((ref) {
-  return HomeViewModel();
+  final vm = HomeViewModel();
+
+  // Startwert aus dem Profil setzen und geplante Hinweise direkt synchronisieren
+  NotificationService.instance.enabled =
+      ref.read(profileProvider).remindersEnabled;
+  vm._syncScheduledNotifications();
+
+  // Bei jeder Profiländerung synchronisieren
+  ref.listen(profileProvider, (_, next) {
+    NotificationService.instance.enabled = next.remindersEnabled;
+    vm._syncScheduledNotifications();
+  });
+
+  return vm;
 });
