@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../AppColors.dart';
+import '../app_colors.dart';
 import '../utils/responsive_utils.dart';
 import 'home_viewmodel.dart';
 
@@ -29,7 +29,7 @@ class HomePageScreen extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appBarBackground,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -52,7 +52,7 @@ class HomePageScreen extends ConsumerWidget {
                 padding: EdgeInsets.all(16),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(32),
                 ),
                 child: Column(
@@ -137,7 +137,7 @@ class HomePageScreen extends ConsumerWidget {
                             : viewModel.startWorkTimer,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: state.isRunning
-                              ? const Color(0xffAFE9FA)
+                              ? AppColors.vacationBackground
                               : AppColors.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -146,12 +146,12 @@ class HomePageScreen extends ConsumerWidget {
                         icon: state.isRunning
                             ? const Icon(
                                 Icons.coffee,
-                                color: Color(0xff2F6A79),
+                                color: AppColors.textVacation,
                                 size: 24,
                               )
                             : const Icon(
                                 Icons.play_arrow,
-                                color: Colors.white,
+                                color: AppColors.white,
                                 size: 24,
                               ),
                         label: Text(
@@ -161,8 +161,8 @@ class HomePageScreen extends ConsumerWidget {
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                               color: state.isRunning
-                                  ? const Color(0xff2F6A79)
-                                  : Colors.white,
+                                  ? AppColors.textVacation
+                                  : AppColors.white,
                             ),
                           ),
                         ),
@@ -180,7 +180,7 @@ class HomePageScreen extends ConsumerWidget {
                               viewModel.pauseWorkTimer();
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xffE7E8E9),
+                              backgroundColor: AppColors.softOutline,
                               padding: EdgeInsets.zero,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -196,8 +196,8 @@ class HomePageScreen extends ConsumerWidget {
                           child: ElevatedButton(
                             onPressed: () => viewModel.stopTimer(),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xffFFDAD6),
-                              foregroundColor: const Color(0xff93000A),
+                              backgroundColor: AppColors.dangerBackground,
+                              foregroundColor: AppColors.dangerForeground,
                               padding: EdgeInsets.zero,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
@@ -217,7 +217,7 @@ class HomePageScreen extends ConsumerWidget {
                  width: double.infinity,
                  padding: EdgeInsets.all(24),
                  decoration: BoxDecoration(
-                   color: Colors.white,
+                    color: AppColors.cardBackground,
                    borderRadius: BorderRadius.circular(24),
                  ),
                  child: Column(
@@ -230,12 +230,12 @@ class HomePageScreen extends ConsumerWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: const Color(0xffAFE9FA),
+                            color: AppColors.vacationBackground,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.coffee_outlined,
-                            color: Color(0xff2F6A79),
+                            color: AppColors.textVacation,
                           ),
                         ),
                         Text(
@@ -255,7 +255,7 @@ class HomePageScreen extends ConsumerWidget {
                       state.breakTime.formatted,
                       style: GoogleFonts.manrope(
                         textStyle: TextStyle(
-                          color: const Color(0xff1D2D3A),
+                          color: AppColors.textBreakTimer,
                           fontSize: 30,
                           fontWeight: FontWeight.w700,
                         ),
@@ -282,7 +282,7 @@ class HomePageScreen extends ConsumerWidget {
                  padding: EdgeInsets.all(24),
                  margin: EdgeInsets.only(top: 20),
                  decoration: BoxDecoration(
-                   color: Colors.white,
+                    color: AppColors.cardBackground,
                    borderRadius: BorderRadius.circular(24),
                  ),
                  child: Column(
@@ -294,7 +294,7 @@ class HomePageScreen extends ConsumerWidget {
                           width: 8,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: const Color(0xff002863),
+                            color: AppColors.brandPrimary,
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
@@ -303,7 +303,7 @@ class HomePageScreen extends ConsumerWidget {
                           'FORTSCHRITT',
                           style: GoogleFonts.manrope(
                             textStyle: TextStyle(
-                              color: const Color(0xff002863),
+                                color: AppColors.brandPrimary,
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
@@ -332,7 +332,7 @@ class HomePageScreen extends ConsumerWidget {
                           '${(viewModel.progress() * 100).toInt()}%',
                           style: GoogleFonts.inter(
                             textStyle: TextStyle(
-                              color: const Color(0xff191C1D),
+                                color: AppColors.textPrimary,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -346,9 +346,9 @@ class HomePageScreen extends ConsumerWidget {
                       child: LinearProgressIndicator(
                         value: viewModel.progress(),
                         minHeight: 8,
-                        backgroundColor: const Color(0xffE7E8E9),
+                        backgroundColor: AppColors.softOutline,
                         valueColor: AlwaysStoppedAnimation(
-                          const Color(0xff002863),
+                          AppColors.brandPrimary,
                         ),
                       ),
                     ),

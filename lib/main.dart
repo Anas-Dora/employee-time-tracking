@@ -1,4 +1,4 @@
-import 'package:employee_time_tracking/AppColors.dart';
+import 'package:employee_time_tracking/app_colors.dart';
 import 'package:employee_time_tracking/dayOverview/weekly_overview_vm.dart';
 import 'package:employee_time_tracking/homePage/home_viewmodel.dart';
 import 'package:employee_time_tracking/monthlyOverview/monthly_overview_vm.dart';
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF002863)),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.brandPrimary),
       ),
       home: Pages(),
     );

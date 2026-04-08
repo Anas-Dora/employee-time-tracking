@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../AppColors.dart';
+import '../app_colors.dart';
 import '../utils/responsive_utils.dart';
 import 'day_overview.dart';
 
@@ -36,7 +36,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                     textStyle: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF002863),
+                      color: AppColors.brandPrimary,
                     ),
                   ),
                 ),
@@ -82,7 +82,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appBarBackground,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -108,7 +108,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                       'Wochen-übersicht',
                       style: GoogleFonts.manrope(
                         textStyle: TextStyle(
-                          color: Color(0xFF002863),
+                          color: AppColors.brandPrimary,
                           fontSize: ResponsiveUtils.getResponsiveFontSize(context, 48),
                           fontWeight: FontWeight.w800,
                         ),
@@ -118,7 +118,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(0xFFF3F4F5),
+                        color: AppColors.subtleSurface,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -128,7 +128,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.white,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: IconButton(
@@ -137,7 +137,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                               icon: Icon(
                                 Icons.arrow_back_ios_new,
                                 size: 16,
-                                color: Color(0xFF002863),
+                                color: AppColors.brandPrimary,
                               ),
                             ),
                           ),
@@ -146,7 +146,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                               weekRange,
                               style: GoogleFonts.manrope(
                                 textStyle: TextStyle(
-                                  color: Color(0xFF002863),
+                                  color: AppColors.brandPrimary,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -158,7 +158,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.white,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: IconButton(
@@ -167,7 +167,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                               icon: Icon(
                                 Icons.arrow_forward_ios,
                                 size: 16,
-                                color: Color(0xFF002863),
+                                color: AppColors.brandPrimary,
                               ),
                             ),
                           ),
@@ -183,7 +183,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   gradient: LinearGradient(
-                    colors: [Color(0xFF002863), AppColors.primary],
+                    colors: [AppColors.brandPrimary, AppColors.primary],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -199,7 +199,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                             'Gesamtarbeitsstunden',
                             style: GoogleFonts.inter(
                               textStyle: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -209,7 +209,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                             '${week.totalWork.inHours}h ${week.totalWork.inMinutes.remainder(60)}m',
                             style: GoogleFonts.manrope(
                               textStyle: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 60,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -219,7 +219,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                             '${vm.progressPercent}% wöchentliches Ziel erreicht',
                             style: GoogleFonts.inter(
                               textStyle: TextStyle(
-                                color: Color(0xFFAFC6FF),
+                                color: AppColors.textOnPrimaryDim,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -236,7 +236,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                         child: Icon(
                           Icons.access_time_filled,
                           size: 220,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       ),
                     ),
@@ -249,7 +249,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                 padding: EdgeInsets.all(32),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +269,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                       '${week.averageBreak.inMinutes}m',
                       style: GoogleFonts.manrope(
                         textStyle: TextStyle(
-                          color: Color(0xFF002863),
+                          color: AppColors.brandPrimary,
                           fontSize: 32,
                           fontWeight: FontWeight.w700,
                         ),
@@ -280,7 +280,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                       "Innerhalb der Zielreichweite",
                       style: GoogleFonts.inter(
                         textStyle: TextStyle(
-                          color: Color(0xFF2A6675),
+                          color: AppColors.textVacation,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -321,43 +321,43 @@ class WeeklyOverviewScreen extends ConsumerWidget {
     String title;
 
     if (day.isHoliday) {
-      cardColor = Color(0xFFEDE7F6);
-      borderColor = Color(0x1A2F6A79);
-      deteCardColor = Color(0xFF4527A0);
-      primaryTextColor = Color(0xFF4527A0);
-      secondaryTextColor = Color(0xB34527A0);
+      cardColor = AppColors.holidayBackground;
+      borderColor = AppColors.vacationOutline;
+      deteCardColor = AppColors.textHoliday;
+      primaryTextColor = AppColors.textHoliday;
+      secondaryTextColor = AppColors.textHolidayMuted;
       title = 'Feiertag';
     } else {
       switch (day.type) {
         case DayType.workday:
-          cardColor = Colors.white;
-          borderColor = Colors.white;
-          deteCardColor = Color(0xFF002863);
-          primaryTextColor = Color(0xFF002863);
+          cardColor = AppColors.white;
+          borderColor = AppColors.white;
+          deteCardColor = AppColors.brandPrimary;
+          primaryTextColor = AppColors.brandPrimary;
           secondaryTextColor = AppColors.secondaryTextColor;
           title = "Werktag";
           break;
         case DayType.sick:
-          cardColor = Color(0x33FFDAD6);
-          borderColor = Color(0x1ABA1A1A);
-          deteCardColor = Color(0xFFBA1A1A);
-          primaryTextColor = Color(0xFFBA1A1A);
-          secondaryTextColor = Color(0xB3BA1A1A);
+          cardColor = AppColors.sickBackgroundSoft;
+          borderColor = AppColors.sickOutline;
+          deteCardColor = AppColors.textSickStrong;
+          primaryTextColor = AppColors.textSickStrong;
+          secondaryTextColor = AppColors.textSickMuted;
           title = "Krank";
           break;
         case DayType.vacation:
-          cardColor = Color(0x1AAFE9FA);
-          borderColor = Color(0x1A2F6A79);
-          deteCardColor = Color(0xFF2F6A79);
-          primaryTextColor = Color(0xFF2F6A79);
-          secondaryTextColor = Color(0xB32F6A79);
+          cardColor = AppColors.vacationBackgroundSoft;
+          borderColor = AppColors.vacationOutline;
+          deteCardColor = AppColors.textVacation;
+          primaryTextColor = AppColors.textVacation;
+          secondaryTextColor = AppColors.textVacationMuted;
           title = "Urlaub";
           break;
         default:
-          cardColor = Color(0x1AC3C6D3);
-          borderColor = Colors.white;
-          deteCardColor = Color(0xFF002863);
-          primaryTextColor = Color(0xFF002863);
+          cardColor = AppColors.neutralTint;
+          borderColor = AppColors.white;
+          deteCardColor = AppColors.brandPrimary;
+          primaryTextColor = AppColors.brandPrimary;
           secondaryTextColor = AppColors.secondaryTextColor;
           title = "Werktag";
       }
@@ -391,7 +391,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                         DateFormat('d').format(day.date),
                         style: GoogleFonts.manrope(
                           textStyle: TextStyle(
-                            color: Colors.white,
+                             color: AppColors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                           ),
@@ -401,7 +401,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                         DateFormat('E', "de_DE").format(day.date).toUpperCase(),
                         style: GoogleFonts.inter(
                           textStyle: TextStyle(
-                            color: Color(0xFFF8F9FA),
+                             color: AppColors.textDateOnDark,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
@@ -586,13 +586,13 @@ class WeeklyOverviewScreen extends ConsumerWidget {
         height: size,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isActive ? primaryTextColor : const Color(0xFFF3F4F5),
+          color: isActive ? primaryTextColor : AppColors.buttonNeutral,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           isActive ? Icons.check : icon,
           size: size * 0.44,
-          color: isActive ? Colors.white : const Color(0xFF434651),
+          color: isActive ? AppColors.white : AppColors.textSecondary,
         ),
       ),
     );

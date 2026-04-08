@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../AppColors.dart';
+import '../app_colors.dart';
 import '../utils/responsive_utils.dart';
 import 'MonthlyNotification.dart';
 import 'monthly_overview_vm.dart';
@@ -30,7 +30,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appBarBackground,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -41,7 +41,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                 padding: ResponsiveUtils.getResponsivePadding(context),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -62,7 +62,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                           child: Text(
                             vm.formattedMonth,
                             style: GoogleFonts.manrope(
-                              color: Color(0xFF002863),
+                              color: AppColors.brandPrimary,
                               fontSize: ResponsiveUtils.getResponsiveFontSize(context, 30),
                               fontWeight: FontWeight.w700,
                             ),
@@ -77,7 +77,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                                   width: 50,
                                   height: 50,
                                   decoration: BoxDecoration(
-                                    color: Color(0xFFF3F4F5),
+                                    color: AppColors.subtleSurface,
                                     borderRadius: BorderRadius.only(
                                       topLeft: Radius.circular(12),
                                       bottomLeft: Radius.circular(12),
@@ -85,7 +85,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                                   ),
                                   child: const Icon(
                                     Icons.arrow_back_ios,
-                                    color: Color(0xff434651),
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -95,7 +95,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                                   width: 50,
                                   height: 50,
                                   decoration: BoxDecoration(
-                                    color: Color(0xFFF3F4F5),
+                                    color: AppColors.subtleSurface,
                                     borderRadius: BorderRadius.only(
                                       topRight: Radius.circular(12),
                                       bottomRight: Radius.circular(12),
@@ -103,7 +103,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                                   ),
                                   child: const Icon(
                                     Icons.arrow_forward_ios,
-                                    color: Color(0xff434651),
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -132,7 +132,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                Container(
                  padding: const EdgeInsets.all(6.0),
                  decoration: BoxDecoration(
-                   color: Colors.white,
+                   color: AppColors.cardBackground,
                    borderRadius: BorderRadius.circular(12),
                  ),
                  child: SingleChildScrollView(
@@ -143,7 +143,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                        scrollDirection: Axis.vertical,
                        child: Table(
                           border: TableBorder.all(
-                            color: Color(0xFFE7E8E9),
+                            color: AppColors.softOutline,
                             width: 1,
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -159,7 +159,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                             // Header Row
                             TableRow(
                               decoration: BoxDecoration(
-                                color: Color(0xFFF3F4F5),
+                                color: AppColors.subtleSurface,
                                 borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(12),
                                   topRight: Radius.circular(12),
@@ -188,7 +188,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                  padding: ResponsiveUtils.getResponsivePadding(context),
                  width: double.infinity,
                  decoration: BoxDecoration(
-                   color: Color(0xFFF3F4F5),
+                   color: AppColors.subtleSurface,
                    borderRadius: BorderRadius.circular(12),
                  ),
                  child: Column(
@@ -240,8 +240,8 @@ class MonthlyOverviewScreen extends ConsumerWidget {
       if (day.isHoliday) {
         return dateCell(
           formattedDate,
-          backgroundColor: const Color(0xFFEDE7F6),
-          textColor: const Color(0xFF4527A0),
+          backgroundColor: AppColors.holidayBackground,
+          textColor: AppColors.textHoliday,
         );
       }
 
@@ -249,14 +249,14 @@ class MonthlyOverviewScreen extends ConsumerWidget {
         case DayType.vacation:
           return dateCell(
             formattedDate,
-            backgroundColor: const Color(0xFFAFE9FA),
-            textColor: const Color(0xFF2F6A79),
+            backgroundColor: AppColors.vacationBackground,
+            textColor: AppColors.textVacation,
           );
         case DayType.sick:
           return dateCell(
             formattedDate,
-            backgroundColor: const Color(0xFFFFE5E5),
-            textColor: const Color(0xFFB00020),
+            backgroundColor: AppColors.sickBackground,
+            textColor: AppColors.textSick,
           );
         default:
           return dateCell(formattedDate);
@@ -343,7 +343,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(16.0),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -373,18 +373,18 @@ class MonthlyOverviewScreen extends ConsumerWidget {
       case MonthlyNotificationType.missingEntry:
         return const _NotificationVisuals(
           icon: Icons.edit_calendar_outlined,
-          color: Color(0xFF8A5A00),
+          color: AppColors.textWarning,
         );
       case MonthlyNotificationType.incompleteEntry:
       case MonthlyNotificationType.negativeOvertime:
         return const _NotificationVisuals(
           icon: Icons.error_outline,
-          color: Color(0xFFBA1A1A),
+          color: AppColors.textSickStrong,
         );
       case MonthlyNotificationType.overtimeGoal:
         return const _NotificationVisuals(
           icon: Icons.check_circle_outline,
-          color: Color(0xFF2F6A79),
+          color: AppColors.textVacation,
         );
       case MonthlyNotificationType.none:
         return const _NotificationVisuals(
@@ -399,7 +399,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
        child: Container(
          padding: EdgeInsets.all(8),
          decoration: BoxDecoration(
-           color: Color(0xFFF3F4F5),
+           color: AppColors.subtleSurface,
            borderRadius: BorderRadius.circular(8),
          ),
          child: Column(
@@ -417,7 +417,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
              Text(
                '${value.toStringAsFixed(1)}h',
                style: GoogleFonts.manrope(
-                 color: Color(0xFF002863),
+                  color: AppColors.brandPrimary,
                  fontSize: 24,
                  fontWeight: FontWeight.w700,
                ),
@@ -433,7 +433,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
       child: Container(
         padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: value > 0 ? Color(0xFFAFE9FA) : Color(0xFFFFE5E5),
+          color: value > 0 ? AppColors.vacationBackground : AppColors.sickBackground,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -443,7 +443,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
             Text(
               'Überstunden',
               style: GoogleFonts.inter(
-                color: value > 0 ? Color(0xFF2F6A79) : Color(0xFFB00020),
+                color: value > 0 ? AppColors.textVacation : AppColors.textSick,
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
@@ -451,7 +451,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
             Text(
               '${value > 0 ? '+' : ''}${value.toStringAsFixed(1)}h',
               style: GoogleFonts.manrope(
-                color: value > 0 ? Color(0xFF2F6A79) : Color(0xFFB00020),
+                color: value > 0 ? AppColors.textVacation : AppColors.textSick,
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
               ),
@@ -477,7 +477,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: textColor ?? const Color(0xFF191C1D),
+              color: textColor ?? AppColors.textPrimary,
             ),
           ),
         ),
@@ -492,7 +492,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: GoogleFonts.inter(fontSize: 16, color: Color(0xFF191C1D)),
+          style: GoogleFonts.inter(fontSize: 16, color: AppColors.textPrimary),
         ),
       ),
     );
@@ -500,13 +500,13 @@ class MonthlyOverviewScreen extends ConsumerWidget {
 
   static Widget vacationCell() {
     return Container(
-      color: Color(0xFFAFE9FA),
+      color: AppColors.vacationBackground,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "-",
-            style: GoogleFonts.inter(fontSize: 16, color: Color(0xFF2F6A79)),
+            style: GoogleFonts.inter(fontSize: 16, color: AppColors.textVacation),
           ),
         ),
       ),
@@ -515,13 +515,13 @@ class MonthlyOverviewScreen extends ConsumerWidget {
 
   static Widget sickCell() {
     return Container(
-      color: Color(0xFFFFE5E5),
+      color: AppColors.sickBackground,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "-",
-            style: GoogleFonts.inter(fontSize: 16, color: Color(0xFFB00020)),
+            style: GoogleFonts.inter(fontSize: 16, color: AppColors.textSick),
           ),
         ),
       ),
@@ -530,13 +530,13 @@ class MonthlyOverviewScreen extends ConsumerWidget {
 
   static Widget holidayCell() {
     return Container(
-      color: Color(0xFFEDE7F6),
+      color: AppColors.holidayBackground,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "-",
-            style: GoogleFonts.inter(fontSize: 16, color: Color(0xFF4527A0)),
+            style: GoogleFonts.inter(fontSize: 16, color: AppColors.textHoliday),
           ),
         ),
       ),
@@ -552,7 +552,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF002863),
+            color: AppColors.brandPrimary,
           ),
         ),
       ),
@@ -566,7 +566,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
         alignment: Alignment.center,
         height: 20,
         decoration: BoxDecoration(
-          color: text.startsWith('+') ? Color(0xFFAFE9FA) : Color(0xFFFFE5E5),
+          color: text.startsWith('+') ? AppColors.vacationBackground : AppColors.sickBackground,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -574,7 +574,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           style: GoogleFonts.manrope(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: text.startsWith('+') ? Color(0xFF2F6A79) : Color(0xFFB00020),
+            color: text.startsWith('+') ? AppColors.textVacation : AppColors.textSick,
           ),
         ),
       ),
@@ -590,7 +590,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
             text,
             style: GoogleFonts.manrope(
               textStyle: const TextStyle(
-                color: Color(0xFF002863),
+                color: AppColors.brandPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),

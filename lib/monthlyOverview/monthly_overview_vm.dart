@@ -1,6 +1,7 @@
 import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/monthlyOverview/work_day.dart';
 import 'package:employee_time_tracking/services/holiday_service.dart';
+import 'package:employee_time_tracking/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
@@ -558,7 +559,7 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
                     return Theme(
                       data: Theme.of(context).copyWith(
                         colorScheme: ColorScheme.fromSeed(
-                          seedColor: Colors.blue,
+                          seedColor: AppColors.timePickerSeed,
                           brightness: Brightness.light,
                         ),
                         useMaterial3: true,
@@ -587,7 +588,7 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
                     return Theme(
                       data: Theme.of(context).copyWith(
                         colorScheme: ColorScheme.fromSeed(
-                          seedColor: Colors.blue,
+                          seedColor: AppColors.timePickerSeed,
                           brightness: Brightness.light,
                         ),
                         useMaterial3: true,

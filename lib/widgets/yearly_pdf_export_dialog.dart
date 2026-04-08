@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../AppColors.dart';
+import '../app_colors.dart';
 import '../utils/responsive_utils.dart';
 
 class YearlyPdfExportDialog extends StatefulWidget {
@@ -83,7 +83,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('$monthName $selectedYear PDF wird geöffnet...'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -93,7 +93,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fehler beim Erstellen des PDF: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -112,7 +112,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Bitte wählen Sie mindestens einen Monat aus'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.warning,
         ),
       );
       return;
@@ -136,7 +136,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
             content: Text(
               '${selectedMonths.length} Monat(e) PDF(s) werden geöffnet!',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -147,7 +147,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fehler beim Erstellen des PDF: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -173,7 +173,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Jahresbericht $selectedYear wird geoeffnet...'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -184,7 +184,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fehler beim Erstellen des Jahres-PDF: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -252,7 +252,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
               style: GoogleFonts.manrope(
                 fontSize: titleSize,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF002863),
+                color: AppColors.brandPrimary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -288,7 +288,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                         ),
                         child: const Icon(
                           Icons.arrow_back_ios,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       ),
                     ),
@@ -297,7 +297,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                       width: yearBoxWidth,
                       height: yearControlSize,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.primary, width: 2),
                       ),
@@ -307,7 +307,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                           style: GoogleFonts.manrope(
                             fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF002863),
+                            color: AppColors.brandPrimary,
                           ),
                         ),
                       ),
@@ -324,7 +324,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                         ),
                         child: const Icon(
                           Icons.arrow_forward_ios,
-                          color: Colors.white,
+                          color: AppColors.white,
                         ),
                       ),
                     ),
@@ -348,7 +348,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                     style: GoogleFonts.inter(
                       fontSize: bodySize,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF002863),
+                      color: AppColors.brandPrimary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -373,12 +373,12 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.primary.withValues(alpha: 0.1)
-                            : Colors.white,
+                            : AppColors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isSelected
                               ? AppColors.primary
-                              : const Color(0xFFE7E8E9),
+                               : AppColors.softOutline,
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -395,7 +395,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                               style: GoogleFonts.inter(
                                 fontSize: bodySize,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF002863),
+                                 color: AppColors.brandPrimary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -422,7 +422,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                                 child: Icon(
                                   Icons.file_download_outlined,
                                   color: isLoading
-                                      ? Colors.grey
+                                      ? AppColors.disabled
                                       : AppColors.primary,
                                   size: 20,
                                 ),
@@ -450,8 +450,8 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                     : _downloadSelectedMonths,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey,
+                  foregroundColor: AppColors.white,
+                  disabledBackgroundColor: AppColors.disabled,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -462,7 +462,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                         height: 20,
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            AppColors.white,
                           ),
                           strokeWidth: 2,
                         ),

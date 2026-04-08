@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../AppColors.dart';
+import '../app_colors.dart';
 import '../dayOverview/day_overview.dart';
 
 class DayEditDialog extends StatelessWidget {
@@ -38,7 +38,7 @@ class DayEditDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       title: Text(
         'Tag bearbeiten',
         style: TextStyle(
@@ -72,16 +72,16 @@ class DayEditDialog extends StatelessWidget {
                         dayTypeLabel(type),
                         style: TextStyle(
                           color: selectedType == type
-                              ? Colors.black
-                              : Colors.white,
+                              ? AppColors.black
+                              : AppColors.white,
                         ),
                       ),
                     ),
                   )
                   .toList(),
               onChanged: onTypeChanged,
-              dropdownColor: Colors.blue.shade200,
-              focusColor: Colors.red,
+              dropdownColor: AppColors.dropdownBackground,
+              focusColor: AppColors.error,
             ),
 
             const SizedBox(height: 16),
@@ -115,7 +115,7 @@ class DayEditDialog extends StatelessWidget {
 
               TextField(
                 controller: breakController,
-                cursorColor: Color(0xFF002863),
+                cursorColor: AppColors.brandPrimary,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Pause (Minuten)',
@@ -147,14 +147,14 @@ class DayEditDialog extends StatelessWidget {
           style: ButtonStyle(
             overlayColor: MaterialStateProperty.resolveWith<Color?>((states) {
               if (states.contains(MaterialState.pressed)) {
-                return const Color(0xFF002863).withOpacity(0.2);
+                 return AppColors.overlayPrimaryPressed;
               }
               return null;
             }),
           ),
           child: const Text(
             'Abbrechen',
-            style: TextStyle(color: Color(0xFF002863)),
+             style: TextStyle(color: AppColors.brandPrimary),
           ),
         ),
 
@@ -162,14 +162,14 @@ class DayEditDialog extends StatelessWidget {
           onPressed: onSave,
           style:
               ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade100,
-                foregroundColor: const Color(0xFF002863),
+                backgroundColor: AppColors.actionBackground,
+                foregroundColor: AppColors.brandPrimary,
               ).copyWith(
                 overlayColor: MaterialStateProperty.resolveWith<Color?>((
                   states,
                 ) {
                   if (states.contains(MaterialState.pressed)) {
-                    return const Color(0xFF002863).withOpacity(0.2);
+                    return AppColors.overlayPrimaryPressed;
                   }
                   return null;
                 }),

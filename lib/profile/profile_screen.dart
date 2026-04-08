@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../AppColors.dart';
+import '../app_colors.dart';
 import '../utils/responsive_utils.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -27,7 +27,7 @@ class ProfileScreen extends ConsumerWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appBarBackground,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -40,7 +40,7 @@ class ProfileScreen extends ConsumerWidget {
                 style: GoogleFonts.manrope(
                   fontSize: 36,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF002863),
+                  color: AppColors.brandPrimary,
                 ),
               ),
               Text(
@@ -66,7 +66,7 @@ class ProfileScreen extends ConsumerWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -80,7 +80,7 @@ class ProfileScreen extends ConsumerWidget {
                 width: double.infinity,
                 padding: ResponsiveUtils.getResponsivePadding(context),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -93,11 +93,11 @@ class ProfileScreen extends ConsumerWidget {
                           height: 80,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            color: Color(0xFFD9E2FF),
+                            color: AppColors.brandAccentSoft,
                           ),
                           child: Icon(
                             Icons.person_outlined,
-                            color: Color(0xFF002863),
+                            color: AppColors.brandPrimary,
                             size: 40,
                           ),
                         ),
@@ -111,7 +111,7 @@ class ProfileScreen extends ConsumerWidget {
                                 style: GoogleFonts.manrope(
                                   fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF002863),
+                                  color: AppColors.brandPrimary,
                                 ),
                               ),
                               Text(
@@ -144,7 +144,7 @@ class ProfileScreen extends ConsumerWidget {
                  width: double.infinity,
                  padding: ResponsiveUtils.getResponsivePadding(context),
                  decoration: BoxDecoration(
-                   color: Colors.white,
+                   color: AppColors.cardBackground,
                    borderRadius: BorderRadius.circular(12),
                  ),
                  child: Column(
@@ -155,7 +155,7 @@ class ProfileScreen extends ConsumerWidget {
                       style: GoogleFonts.manrope(
                         fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF002863),
+                        color: AppColors.brandPrimary,
                       ),
                     ),
                     SizedBox(height: 32),
@@ -170,7 +170,7 @@ class ProfileScreen extends ConsumerWidget {
                               height: 60,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                color: Color(0xFFE7E8E9),
+                                color: AppColors.softOutline,
                               ),
                               child: Icon(
                                 Icons.notifications_outlined,
@@ -187,7 +187,7 @@ class ProfileScreen extends ConsumerWidget {
                                   style: GoogleFonts.inter(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF191C1D),
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                                 Text(
@@ -208,11 +208,11 @@ class ProfileScreen extends ConsumerWidget {
                           onChanged: vm.toggleReminders,
                           trackColor: WidgetStateProperty<Color?>.fromMap(
                             <WidgetStatesConstraint, Color>{
-                              WidgetState.selected: Color(0xFF002863)
+                              WidgetState.selected: AppColors.brandPrimary
                             },
                           ),
                           thumbColor: const WidgetStatePropertyAll<Color>(
-                            Colors.white,
+                            AppColors.white,
                           ),
                         ),
                       ],
@@ -338,7 +338,7 @@ class ProfileScreen extends ConsumerWidget {
             style: GoogleFonts.manrope(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1D2D3A),
+              color: AppColors.textBreakTimer,
             ),
           ),
         ],
