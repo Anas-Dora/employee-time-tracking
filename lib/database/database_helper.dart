@@ -5,6 +5,7 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
   static const int _dbVersion = 3;
+  static String? testDatabaseNameOverride;
 
   DatabaseHelper._internal();
 
@@ -16,7 +17,8 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'employee_time_tracking.db');
+    final dbName = testDatabaseNameOverride ?? 'employee_time_tracking.db';
+    final path = join(dbPath, dbName);
 
     return await openDatabase(
       path,
@@ -325,8 +327,8 @@ class DatabaseHelper {
     required String bundesland,
   }) async {
     final db = await database;
-    final from = DateTime(year, 1, 1).toIso8601String();
-    final to = DateTime(year, 12, 31, 23, 59, 59).toIso8601String();
+    final from = '$year-01-01';
+    final to = '$year-12-31';
     return await db.query(
       'holidays',
       where: 'date BETWEEN ? AND ? AND bundesland = ?',
