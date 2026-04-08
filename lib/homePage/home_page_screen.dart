@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../AppColors.dart';
+import '../utils/responsive_utils.dart';
 import 'home_viewmodel.dart';
 
 class HomePageScreen extends ConsumerWidget {
@@ -14,6 +15,8 @@ class HomePageScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
+    final timerMainFontSize = ResponsiveUtils.getResponsiveFontSize(context, 80);
+    final timerSecondsFontSize = ResponsiveUtils.getResponsiveFontSize(context, 30);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -30,7 +33,7 @@ class HomePageScreen extends ConsumerWidget {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.all(12),
+          padding: ResponsiveUtils.getResponsivePadding(context),
           child: Column(
             children: [
               Text(
@@ -38,7 +41,7 @@ class HomePageScreen extends ConsumerWidget {
                 style: GoogleFonts.manrope(
                   textStyle: TextStyle(
                     color: AppColors.primary,
-                    fontSize: 24,
+                    fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -48,7 +51,6 @@ class HomePageScreen extends ConsumerWidget {
               Container(
                 padding: EdgeInsets.all(16),
                 width: double.infinity,
-                height: 375,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(32),
@@ -66,65 +68,68 @@ class HomePageScreen extends ConsumerWidget {
                       ),
                     ),
                     SizedBox(height: 10),
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: state.workTime.hours.toString().padLeft(2, '0'),
-                            style: GoogleFonts.manrope(
-                              textStyle: TextStyle(
-                                fontSize: 80,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w800,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: state.workTime.hours.toString().padLeft(2, '0'),
+                              style: GoogleFonts.manrope(
+                                textStyle: TextStyle(
+                                  fontSize: timerMainFontSize,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
-                          ),
-                          TextSpan(
-                            text: ':',
-                            style: GoogleFonts.manrope(
-                              textStyle: TextStyle(
-                                fontSize: 80,
-                                color: AppColors.textColor,
-                                fontWeight: FontWeight.w800,
+                            TextSpan(
+                              text: ':',
+                              style: GoogleFonts.manrope(
+                                textStyle: TextStyle(
+                                  fontSize: timerMainFontSize,
+                                  color: AppColors.textColor,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
-                          ),
-                          TextSpan(
-                            text: state.workTime.minutes.toString().padLeft(2, '0'),
-                            style: GoogleFonts.manrope(
-                              textStyle: TextStyle(
-                                fontSize: 80,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w800,
+                            TextSpan(
+                              text: state.workTime.minutes.toString().padLeft(2, '0'),
+                              style: GoogleFonts.manrope(
+                                textStyle: TextStyle(
+                                  fontSize: timerMainFontSize,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
-                          ),
-                          TextSpan(
-                            text: ':',
-                            style: GoogleFonts.manrope(
-                              textStyle: TextStyle(
-                                fontSize: 80,
-                                color: AppColors.textColor,
-                                fontWeight: FontWeight.w800,
+                            TextSpan(
+                              text: ':',
+                              style: GoogleFonts.manrope(
+                                textStyle: TextStyle(
+                                  fontSize: timerMainFontSize,
+                                  color: AppColors.textColor,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
-                          ),
-                          TextSpan(
-                            text: state.workTime.seconds.toString().padLeft(2, '0'),
-                            style: GoogleFonts.manrope(
-                              textStyle: TextStyle(
-                                fontSize: 30,
-                                color: AppColors.secondaryTextColor1,
-                                fontWeight: FontWeight.w700,
+                            TextSpan(
+                              text: state.workTime.seconds.toString().padLeft(2, '0'),
+                              style: GoogleFonts.manrope(
+                                textStyle: TextStyle(
+                                  fontSize: timerSecondsFontSize,
+                                  color: AppColors.secondaryTextColor1,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     SizedBox(height: 20),
                     SizedBox(
-                      width: 290,
+                      width: ResponsiveUtils.isMediumDevice(context) ? 250 : 290,
                       height: 60,
                       child: ElevatedButton.icon(
                         onPressed: state.isRunning
@@ -205,16 +210,15 @@ class HomePageScreen extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 20),
-              // Pausenzeit Container
-              Container(
-                width: double.infinity,
-                height: 180,
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
+               // Pausenzeit Container
+               Container(
+                 width: double.infinity,
+                 padding: EdgeInsets.all(24),
+                 decoration: BoxDecoration(
+                   color: Colors.white,
+                   borderRadius: BorderRadius.circular(24),
+                 ),
+                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -265,21 +269,21 @@ class HomePageScreen extends ConsumerWidget {
                           fontWeight: FontWeight.w400,
                         ),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              // Fortschritt Container
-              Container(
-                width: double.infinity,
-                height: 180,
-                padding: EdgeInsets.all(24),
-                margin: EdgeInsets.only(top: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
+               Container(
+                 width: double.infinity,
+                 padding: EdgeInsets.all(24),
+                 margin: EdgeInsets.only(top: 20),
+                 decoration: BoxDecoration(
+                   color: Colors.white,
+                   borderRadius: BorderRadius.circular(24),
+                 ),
+                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -309,14 +313,17 @@ class HomePageScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Tagesziel (8 Std.)',
-                          style: GoogleFonts.inter(
-                            textStyle: TextStyle(
-                              color: AppColors.secondaryTextColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
+                        Expanded(
+                          child: Text(
+                            'Tagesziel (8 Std.)',
+                            style: GoogleFonts.inter(
+                              textStyle: TextStyle(
+                                color: AppColors.secondaryTextColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Text(

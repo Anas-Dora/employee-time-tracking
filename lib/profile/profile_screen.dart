@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../AppColors.dart';
+import '../utils/responsive_utils.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -41,10 +42,10 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 10),
-              SizedBox(
-                width: 290,
-                height: 55,
-                child: ElevatedButton.icon(
+               SizedBox(
+                 width: ResponsiveUtils.isMediumDevice(context) ? 180 : 290,
+                 height: 55,
+                 child: ElevatedButton.icon(
                   onPressed: () {
                     showDialog(
                       context: context,
@@ -67,7 +68,7 @@ class ProfileScreen extends ConsumerWidget {
               SizedBox(height: 48),
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(32.0),
+                padding: ResponsiveUtils.getResponsivePadding(context),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -98,7 +99,7 @@ class ProfileScreen extends ConsumerWidget {
                               Text(
                                 profile.name,
                                 style: GoogleFonts.manrope(
-                                  fontSize: 32,
+                                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF002863),
                                 ),
@@ -129,21 +130,20 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 32),
-              Container(
-                width: double.infinity,
-                height: 205,
-                padding: EdgeInsets.all(32.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
+               Container(
+                 width: double.infinity,
+                 padding: ResponsiveUtils.getResponsivePadding(context),
+                 decoration: BoxDecoration(
+                   color: Colors.white,
+                   borderRadius: BorderRadius.circular(12),
+                 ),
+                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Einstellungen',
                       style: GoogleFonts.manrope(
-                        fontSize: 32,
+                        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF002863),
                       ),

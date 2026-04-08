@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:employee_time_tracking/database/database_helper.dart';
+import 'package:employee_time_tracking/dayOverview/day_overview.dart';
 import 'package:employee_time_tracking/monthlyOverview/work_day.dart';
 import 'package:employee_time_tracking/profile/profile.dart';
+import 'package:employee_time_tracking/services/holiday_service.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,6 +12,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class PdfExportService {
+  static const String _defaultBundesland = 'BW';
+  static final HolidayService _holidayService = HolidayService();
+
   static Future<void> generateMonthlyPdf(
     int year,
     int month,
@@ -217,7 +222,43 @@ class PdfExportService {
       final key = '${day.year}-${day.month}-${day.day}';
       days.add(byDate[key] ?? WorkDay(date: day));
     }
-    return days;
+    return _applyHolidayFlags(days);
+  }
+
+  static Future<List<WorkDay>> _applyHolidayFlags(List<WorkDay> days) async {
+    final holidayFlags = await Future.wait(
+      days.map((day) async {
+        if (day.isHoliday) {
+          return true;
+        }
+
+        try {
+          return await _holidayService.isHoliday(
+            date: day.date,
+            bundesland: _defaultBundesland,
+          );
+        } catch (_) {
+          return false;
+        }
+      }),
+    );
+
+    return List<WorkDay>.generate(days.length, (index) {
+      final day = days[index];
+      if (!holidayFlags[index]) {
+        return day;
+      }
+
+      return day.copyWith(
+        isHoliday: true,
+        type: DayType.none,
+        start: '-',
+        end: '-',
+        pause: '-',
+        total: '-',
+        diff: '-',
+      );
+    });
   }
 
   static bool _isWeekend(DateTime day) {
@@ -335,10 +376,13 @@ class PdfExportService {
   }
 
   static PdfColor _dayRowColor(WorkDay day) {
-    if (day.type.name == 'sick') {
+    if (day.isHoliday) {
+      return PdfColors.deepPurple100;
+    }
+    if (day.type == DayType.sick) {
       return PdfColors.red100;
     }
-    if (day.type.name == 'vacation') {
+    if (day.type == DayType.vacation) {
       return PdfColors.lightBlue100;
     }
     return PdfColors.white;

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../AppColors.dart';
+import '../utils/responsive_utils.dart';
 import 'MonthlyNotification.dart';
 import 'monthly_overview_vm.dart';
 
@@ -30,9 +31,8 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(16.0),
+                padding: ResponsiveUtils.getResponsivePadding(context),
                 width: double.infinity,
-                height: 190,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -51,12 +51,14 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          vm.formattedMonth,
-                          style: GoogleFonts.manrope(
-                            color: Color(0xFF002863),
-                            fontSize: 30,
-                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Text(
+                            vm.formattedMonth,
+                            style: GoogleFonts.manrope(
+                              color: Color(0xFF002863),
+                              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 30),
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                         SizedBox(
@@ -108,6 +110,9 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _infoBox('Gesamtstunden', vm.totalHours),
+                        SizedBox(
+                          width: ResponsiveUtils.getResponsiveSize(context, 12),
+                        ),
                         vm.overtime == 0
                             ? _infoBox('Überstunden', vm.overtime)
                             : _overtimeInfoBox('Überstunden', vm.overtime),
@@ -117,21 +122,19 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(6.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: SizedBox(
-                  height: 400,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: 900),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.vertical,
-                        child: Table(
+               Container(
+                 padding: const EdgeInsets.all(6.0),
+                 decoration: BoxDecoration(
+                   color: Colors.white,
+                   borderRadius: BorderRadius.circular(12),
+                 ),
+                 child: SingleChildScrollView(
+                   scrollDirection: Axis.horizontal,
+                   child: ConstrainedBox(
+                     constraints: BoxConstraints(minWidth: 900),
+                     child: SingleChildScrollView(
+                       scrollDirection: Axis.vertical,
+                       child: Table(
                           border: TableBorder.all(
                             color: Color(0xFFE7E8E9),
                             width: 1,
@@ -167,40 +170,39 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                             ...state.days.map((day) {
                               return _row(context, ref, day, vm);
                             }),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(24.0),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Color(0xFFF3F4F5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.notifications_active_outlined,
-                          size: 24,
-                          color: AppColors.primary,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Monatliche Benachrichtigungen',
-                          style: GoogleFonts.manrope(
-                            color: AppColors.primary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                         ],
+                       ),
+                     ),
+                   ),
+                 ),
+               ),
+               SizedBox(height: 20),
+               Container(
+                 padding: ResponsiveUtils.getResponsivePadding(context),
+                 width: double.infinity,
+                 decoration: BoxDecoration(
+                   color: Color(0xFFF3F4F5),
+                   borderRadius: BorderRadius.circular(12),
+                 ),
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Row(
+                       children: [
+                         Icon(
+                           Icons.notifications_active_outlined,
+                           size: 24,
+                           color: AppColors.primary,
+                         ),
+                         SizedBox(width: 10),
+                         Text(
+                           'Monatliche Benachrichtigungen',
+                           style: GoogleFonts.manrope(
+                             color: AppColors.primary,
+                             fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
+                             fontWeight: FontWeight.w600,
+                           ),
+                         ),
                       ],
                     ),
                     SizedBox(height: 20),
@@ -225,6 +227,35 @@ class MonthlyOverviewScreen extends ConsumerWidget {
     WorkDay day,
     MonthlyOverviewVM vm,
   ) {
+    final formattedDate = DateFormat('dd. MMM, E', 'de_DE').format(day.date);
+
+    Widget resolveDateCell() {
+      if (day.isHoliday) {
+        return dateCell(
+          formattedDate,
+          backgroundColor: const Color(0xFFEDE7F6),
+          textColor: const Color(0xFF4527A0),
+        );
+      }
+
+      switch (day.type) {
+        case DayType.vacation:
+          return dateCell(
+            formattedDate,
+            backgroundColor: const Color(0xFFAFE9FA),
+            textColor: const Color(0xFF2F6A79),
+          );
+        case DayType.sick:
+          return dateCell(
+            formattedDate,
+            backgroundColor: const Color(0xFFFFE5E5),
+            textColor: const Color(0xFFB00020),
+          );
+        default:
+          return dateCell(formattedDate);
+      }
+    }
+
     Widget resolveCell(Widget Function() defaultBuilder) {
       if (day.isHoliday) {
         return holidayCell();
@@ -242,13 +273,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
 
     return TableRow(
       children: [
-        _wrap(
-          context,
-          ref,
-          day,
-          vm,
-          dateCell(DateFormat('dd. MMM, E', 'de_DE').format(day.date)),
-        ),
+        _wrap(context, ref, day, vm, resolveDateCell()),
 
         _wrap(context, ref, day, vm, resolveCell(() => cell(day.start))),
 
@@ -269,9 +294,11 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           ref,
           day,
           vm,
-          (day.diff == '+00:00' || day.diff == '-00:00')
-              ? resolveCell(() => cell(day.diff))
-              : diffCell(day.diff),
+          resolveCell(
+            () => (day.diff == '+00:00' || day.diff == '-00:00')
+                ? cell(day.diff)
+                : diffCell(day.diff),
+          ),
         ),
       ],
     );
@@ -315,11 +342,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            config.icon,
-            size: 24,
-            color: config.color,
-          ),
+          Icon(config.icon, size: 24, color: config.color),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -364,84 +387,91 @@ class MonthlyOverviewScreen extends ConsumerWidget {
     }
   }
 
-  static Widget _infoBox(String title, double value) {
-    return Container(
-      width: 165,
-      height: 75,
-      padding: EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Color(0xFFF3F4F5),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              color: AppColors.secondaryTextColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          Text(
-            '${value.toStringAsFixed(1)}h',
-            style: GoogleFonts.manrope(
-              color: Color(0xFF002863),
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+   static Widget _infoBox(String title, double value) {
+     return Expanded(
+       child: Container(
+         padding: EdgeInsets.all(8),
+         decoration: BoxDecoration(
+           color: Color(0xFFF3F4F5),
+           borderRadius: BorderRadius.circular(8),
+         ),
+         child: Column(
+           mainAxisAlignment: MainAxisAlignment.center,
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+             Text(
+               title,
+               style: GoogleFonts.inter(
+                 color: AppColors.secondaryTextColor,
+                 fontSize: 12,
+                 fontWeight: FontWeight.w400,
+               ),
+             ),
+             Text(
+               '${value.toStringAsFixed(1)}h',
+               style: GoogleFonts.manrope(
+                 color: Color(0xFF002863),
+                 fontSize: 24,
+                 fontWeight: FontWeight.w700,
+               ),
+             ),
+           ],
+         ),
+       ),
+     );
+   }
 
   static Widget _overtimeInfoBox(String title, double value) {
-    return Container(
-      width: 165,
-      height: 75,
-      padding: EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: value > 0 ? Color(0xFFAFE9FA) : Color(0xFFFFE5E5),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Überstunden',
-            style: GoogleFonts.inter(
-              color: value > 0 ? Color(0xFF2F6A79) : Color(0xFFB00020),
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: value > 0 ? Color(0xFFAFE9FA) : Color(0xFFFFE5E5),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Überstunden',
+              style: GoogleFonts.inter(
+                color: value > 0 ? Color(0xFF2F6A79) : Color(0xFFB00020),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-          ),
-          Text(
-            '${value > 0 ? '+' : ''}${value.toStringAsFixed(1)}h',
-            style: GoogleFonts.manrope(
-              color: value > 0 ? Color(0xFF2F6A79) : Color(0xFFB00020),
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
+            Text(
+              '${value > 0 ? '+' : ''}${value.toStringAsFixed(1)}h',
+              style: GoogleFonts.manrope(
+                color: value > 0 ? Color(0xFF2F6A79) : Color(0xFFB00020),
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  static Widget dateCell(String date) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(
-          date,
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF191C1D),
+  static Widget dateCell(
+    String date, {
+    Color? backgroundColor,
+    Color? textColor,
+  }) {
+    return Container(
+      color: backgroundColor,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            date,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: textColor ?? const Color(0xFF191C1D),
+            ),
           ),
         ),
       ),
@@ -450,7 +480,13 @@ class MonthlyOverviewScreen extends ConsumerWidget {
 
   static Widget cell(String text) {
     return Center(
-      child: Padding(padding: const EdgeInsets.all(8.0), child: Text(text)),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(fontSize: 16, color: Color(0xFF191C1D)),
+        ),
+      ),
     );
   }
 
@@ -462,7 +498,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "-",
-            style: GoogleFonts.inter(fontSize: 14, color: Color(0xFF2F6A79)),
+            style: GoogleFonts.inter(fontSize: 16, color: Color(0xFF2F6A79)),
           ),
         ),
       ),
@@ -477,7 +513,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "-",
-            style: GoogleFonts.inter(fontSize: 14, color: Color(0xFFB00020)),
+            style: GoogleFonts.inter(fontSize: 16, color: Color(0xFFB00020)),
           ),
         ),
       ),
@@ -492,7 +528,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "-",
-            style: GoogleFonts.inter(fontSize: 14, color: Color(0xFF4527A0)),
+            style: GoogleFonts.inter(fontSize: 16, color: Color(0xFF4527A0)),
           ),
         ),
       ),
@@ -517,7 +553,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
 
   static Widget diffCell(String text) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0, right: 34.0, left: 34.0),
       child: Container(
         alignment: Alignment.center,
         height: 20,
@@ -562,8 +598,5 @@ class _NotificationVisuals {
   final IconData icon;
   final Color color;
 
-  const _NotificationVisuals({
-    required this.icon,
-    required this.color,
-  });
+  const _NotificationVisuals({required this.icon, required this.color});
 }

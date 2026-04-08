@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../AppColors.dart';
+import '../utils/responsive_utils.dart';
 
 class YearlyPdfExportDialog extends StatefulWidget {
   final Profile profile;
@@ -198,6 +199,20 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmall = ResponsiveUtils.isSmallDevice(context);
+    final isVerySmall = screenWidth < 340;
+    final horizontalPadding = isVerySmall
+        ? 12.0
+        : isSmall
+        ? 16.0
+        : 24.0;
+    final yearControlSize = isVerySmall ? 38.0 : isSmall ? 42.0 : 50.0;
+    final yearBoxWidth = isVerySmall ? 88.0 : isSmall ? 100.0 : 120.0;
+    final yearSpacing = isVerySmall ? 8.0 : 16.0;
+    final titleSize = ResponsiveUtils.getResponsiveFontSize(context, 28);
+    final bodySize = ResponsiveUtils.getResponsiveFontSize(context, 14);
+
     final months = [
       'Januar',
       'Februar',
@@ -216,89 +231,106 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
     return Dialog(
       backgroundColor: AppColors.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: isSmall ? 360 : 460,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             // Titel
             Text(
               'Monatliche PDF-Berichte',
               style: GoogleFonts.manrope(
-                fontSize: 28,
+                fontSize: titleSize,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF002863),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
             Text(
               'Wählen Sie Monate zum Herunterladen aus',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: bodySize,
                 fontWeight: FontWeight.w500,
                 color: AppColors.secondaryTextColor,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 24),
 
             // Jahresnavigation
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                InkWell(
-                  onTap: _previousYear,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Container(
-                  width: 120,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary, width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      selectedYear.toString(),
-                      style: GoogleFonts.manrope(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF002863),
+            Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: _previousYear,
+                      child: Container(
+                        width: yearControlSize,
+                        height: yearControlSize,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                InkWell(
-                  onTap: _nextYear,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12),
+                    SizedBox(width: yearSpacing),
+                    Container(
+                      width: yearBoxWidth,
+                      height: yearControlSize,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primary, width: 2),
+                      ),
+                      child: Center(
+                        child: Text(
+                          selectedYear.toString(),
+                          style: GoogleFonts.manrope(
+                            fontSize: ResponsiveUtils.getResponsiveFontSize(context, 24),
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF002863),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Colors.white,
+                    SizedBox(width: yearSpacing),
+                    InkWell(
+                      onTap: _nextYear,
+                      child: Container(
+                        width: yearControlSize,
+                        height: yearControlSize,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -310,12 +342,16 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                   onChanged: (_) => _selectAllMonths(),
                   activeColor: AppColors.primary,
                 ),
-                Text(
-                  'Alle Monate auswählen',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF002863),
+                Expanded(
+                  child: Text(
+                    'Alle Monate auswählen',
+                    style: GoogleFonts.inter(
+                      fontSize: bodySize,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF002863),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -357,10 +393,12 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                             child: Text(
                               monthName,
                               style: GoogleFonts.inter(
-                                fontSize: 14,
+                                fontSize: bodySize,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF002863),
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (isLoading && loadingMonth == month)
@@ -403,7 +441,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
             // Buttons
             SizedBox(
               width: double.infinity,
-              height: 55,
+              height: isVerySmall ? 60 : 55,
               child: ElevatedButton.icon(
                 onPressed: isLoading
                     ? null
@@ -437,9 +475,12 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                       ? 'Jahresbericht herunterladen'
                       : 'Ausgewählte Monate herunterladen (${selectedMonths.length})',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: bodySize,
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -458,14 +499,16 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
                 child: Text(
                   'Schließen',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: bodySize,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,
                   ),
                 ),
               ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
