@@ -1,5 +1,6 @@
 import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/profile/profile.dart';
+import 'package:employee_time_tracking/services/notification_service.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 final profileProvider = StateNotifierProvider<ProfileViewModel, Profile>((ref) {
@@ -23,9 +24,15 @@ class ProfileViewModel extends StateNotifier<Profile> {
   Future<void> _loadFromDb() async {
     final map = await DatabaseHelper.instance.getProfile();
     if (map != null) {
-      state = Profile.fromMap(map);
+      final profile = Profile.fromMap(map);
+      if (profile.remindersEnabled) {
+        await NotificationService.instance.init();
+      }
+      NotificationService.instance.enabled = profile.remindersEnabled;
+      state = profile;
     } else {
       // Standardprofil in DB speichern
+      NotificationService.instance.enabled = false;
       await DatabaseHelper.instance.upsertProfile(_defaultProfile.toMap());
     }
   }
@@ -35,9 +42,28 @@ class ProfileViewModel extends StateNotifier<Profile> {
     await DatabaseHelper.instance.upsertProfile(updated.toMap());
   }
 
-  Future<void> toggleReminders(bool value) async {
+  Future<bool> toggleReminders(bool value) async {
+    if (value == state.remindersEnabled) {
+      return state.remindersEnabled;
+    }
+
+    if (value) {
+      final permissionGranted =
+          await NotificationService.instance.initAndRequestPermission();
+
+      if (!permissionGranted) {
+        NotificationService.instance.enabled = false;
+        return false;
+      }
+    } else {
+      await NotificationService.instance.disableReminders();
+    }
+
     final updated = state.copyWith(remindersEnabled: value);
+    NotificationService.instance.enabled = value;
     state = updated;
     await DatabaseHelper.instance.upsertProfile(updated.toMap());
+
+    return state.remindersEnabled;
   }
 }

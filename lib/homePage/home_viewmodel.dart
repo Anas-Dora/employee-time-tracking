@@ -233,24 +233,14 @@ class HomeViewModel extends StateNotifier<HomeState> {
       await _loadTodayFromDb();
     }
 
-    // Wenn Pause läuft: beende Pause und zähle Pausenzeit
     if (state.isOnBreak) {
-      final prefs = await SharedPreferences.getInstance();
-      final breakStartMs = prefs.getInt(_kBreakStartMs);
       final currentBreakSec =
           state.breakTime.hours * 3600 + state.breakTime.minutes * 60 + state.breakTime.seconds;
-      int addBreakSec = 0;
-
-      if (breakStartMs != null) {
-        final breakStart = DateTime.fromMillisecondsSinceEpoch(breakStartMs);
-        final now = DateTime.now();
-        addBreakSec = now.difference(breakStart).inSeconds;
-      }
 
       _timer?.cancel();
       final accWorkSec =
           state.workTime.hours * 3600 + state.workTime.minutes * 60 + state.workTime.seconds;
-      final accBreakSec = currentBreakSec + addBreakSec;
+      final accBreakSec = currentBreakSec;
 
       _saveTimerState(
         isRunning: true,

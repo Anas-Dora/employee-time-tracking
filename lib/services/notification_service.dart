@@ -23,6 +23,9 @@ class NotificationService {
 
   // Globaler Schalter – wird vom Profil-Setting gesteuert
   bool enabled = false;
+  bool _isInitialized = false;
+  bool _timeZonesInitialized = false;
+  Future<void>? _initializationFuture;
 
   // Flags: welche Benachrichtigungen wurden heute bereits ausgelöst?
   bool _break30Sent = false;
@@ -32,13 +35,32 @@ class NotificationService {
 
 
   Future<void> init() async {
-    tz.initializeTimeZones();
+    if (_isInitialized) return;
+    if (_initializationFuture != null) {
+      await _initializationFuture;
+      return;
+    }
+
+    _initializationFuture = _initInternal();
+    try {
+      await _initializationFuture;
+    } finally {
+      _initializationFuture = null;
+    }
+  }
+
+  Future<void> _initInternal() async {
+    if (!_timeZonesInitialized) {
+      tz.initializeTimeZones();
+      _timeZonesInitialized = true;
+    }
+
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwinSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
       defaultPresentAlert: true,
       defaultPresentBadge: true,
       defaultPresentSound: true,
@@ -55,11 +77,42 @@ class NotificationService {
       onDidReceiveBackgroundNotificationResponse: _onDidReceiveBackgroundNotificationResponse,
     );
 
-    // Berechtigung für Android 13+ anfragen
-    await plugin
+    _isInitialized = true;
+  }
+
+  Future<bool> initAndRequestPermission() async {
+    await init();
+
+    final androidGranted = await plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
+
+    final iosGranted = await plugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+    final macOsGranted = await plugin
+        .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+
+    return androidGranted ?? iosGranted ?? macOsGranted ?? true;
+  }
+
+  Future<void> disableReminders() async {
+    enabled = false;
+    if (!_isInitialized) return;
+    await _cancelScheduledThresholds();
   }
 
   /// Callback für Benachrichtigungen im Vordergrund
@@ -108,7 +161,7 @@ class NotificationService {
     required int workSeconds,
     required int breakSeconds,
   }) async {
-    if (!enabled) return;
+    if (!enabled || !_isInitialized) return;
 
     final workMinutes = workSeconds ~/ 60;
     final breakMinutes = breakSeconds ~/ 60;
@@ -168,6 +221,8 @@ class NotificationService {
     required int workSeconds,
     required int breakSeconds,
   }) async {
+    if (!_isInitialized) return;
+
     // Wenn Erinnerungen deaktiviert sind, alle geplanten Hinweise entfernen.
     if (!enabled) {
       await _cancelScheduledThresholds();

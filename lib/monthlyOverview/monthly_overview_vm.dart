@@ -1,7 +1,7 @@
 import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/monthlyOverview/work_day.dart';
 import 'package:employee_time_tracking/services/holiday_service.dart';
-import 'package:employee_time_tracking/app_colors.dart';
+import 'package:employee_time_tracking/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:intl/intl.dart';
@@ -334,7 +334,7 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
     final monthLabel = DateFormat('MMMM yyyy', 'de_DE').format(currentMonth);
 
     final missingEntryDays = relevantDays
-        .where((day) => day.type == DayType.none)
+        .where((day) => day.type == DayType.none && !day.isHoliday)
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
 

@@ -3,7 +3,7 @@ import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/widgets/day_edit_dialog.dart';
 import 'package:employee_time_tracking/dayOverview/week_overview.dart';
 import 'package:employee_time_tracking/services/holiday_service.dart';
-import 'package:employee_time_tracking/app_colors.dart';
+import 'package:employee_time_tracking/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
 

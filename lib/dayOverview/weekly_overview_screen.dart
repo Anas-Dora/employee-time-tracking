@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../app_colors.dart';
+import '../theme/app_colors.dart';
 import '../utils/responsive_utils.dart';
 import 'day_overview.dart';
 
@@ -22,40 +22,52 @@ class WeeklyOverviewScreen extends ConsumerWidget {
 
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (sheetContext) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Arbeitszeiten am ${DateFormat('dd.MM.yyyy', 'de_DE').format(day.date)}',
-                  style: GoogleFonts.manrope(
-                    textStyle: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.brandPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                for (final segment in day.orderedSegments)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Text(
-                      '${DateFormat('HH:mm').format(segment.startTime)} - ${DateFormat('HH:mm').format(segment.endTime)}',
-                      style: GoogleFonts.inter(
-                        textStyle: const TextStyle(fontSize: 14),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetContext).size.height * 0.75,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Arbeitszeiten am ${DateFormat('dd.MM.yyyy', 'de_DE').format(day.date)}',
+                    style: GoogleFonts.manrope(
+                      textStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.brandPrimary,
                       ),
                     ),
                   ),
-                const Divider(height: 20),
-                Text('Gesamtarbeitszeit: ${_formatDuration(day.workDuration ?? Duration.zero)}'),
-                const SizedBox(height: 4),
-                Text('Gesamtpause: ${_formatDuration(day.computedBreakDuration)}'),
-              ],
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: day.orderedSegments.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemBuilder: (_, index) {
+                        final segment = day.orderedSegments[index];
+                        return Text(
+                          '${DateFormat('HH:mm').format(segment.startTime)} - ${DateFormat('HH:mm').format(segment.endTime)}',
+                          style: GoogleFonts.inter(
+                            textStyle: const TextStyle(fontSize: 14),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const Divider(height: 20),
+                  Text('Gesamtarbeitszeit: ${_formatDuration(day.workDuration ?? Duration.zero)}'),
+                  const SizedBox(height: 4),
+                  Text('Gesamtpause: ${_formatDuration(day.computedBreakDuration)}'),
+                ],
+              ),
             ),
           ),
         );

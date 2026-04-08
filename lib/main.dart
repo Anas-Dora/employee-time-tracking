@@ -1,10 +1,9 @@
-import 'package:employee_time_tracking/app_colors.dart';
+import 'package:employee_time_tracking/theme/app_colors.dart';
 import 'package:employee_time_tracking/dayOverview/weekly_overview_vm.dart';
 import 'package:employee_time_tracking/homePage/home_viewmodel.dart';
 import 'package:employee_time_tracking/monthlyOverview/monthly_overview_vm.dart';
 import 'package:employee_time_tracking/profile/profile_screen.dart';
 import 'package:employee_time_tracking/services/holiday_cache_initializer.dart';
-import 'package:employee_time_tracking/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -18,8 +17,6 @@ void main() async {
 
   await initializeDateFormatting('de_DE', null);
 
-  // Benachrichtigungsdienst initialisieren (inkl. Berechtigungsanfrage)
-  await NotificationService.instance.init();
 
   // Initialisiere Feiertag-Cache im Hintergrund
   HolidayCacheInitializer.initializeForState('BW');

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../app_colors.dart';
+import '../theme/app_colors.dart';
 import '../utils/responsive_utils.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -205,7 +205,22 @@ class ProfileScreen extends ConsumerWidget {
 
                         Switch(
                           value: profile.remindersEnabled,
-                          onChanged: vm.toggleReminders,
+                          onChanged: (value) async {
+                            final remindersEnabled =
+                                await vm.toggleReminders(value);
+
+                            if (!context.mounted || !value || remindersEnabled) {
+                              return;
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Benachrichtigungen wurden nicht freigegeben.',
+                                ),
+                              ),
+                            );
+                          },
                           trackColor: WidgetStateProperty<Color?>.fromMap(
                             <WidgetStatesConstraint, Color>{
                               WidgetState.selected: AppColors.brandPrimary
