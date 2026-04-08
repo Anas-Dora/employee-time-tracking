@@ -22,7 +22,7 @@ class HomePageScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
-          'Home Page',
+          'Zeitify',
           style: TextStyle(
             color: AppColors.primary,
             fontSize: 20,
@@ -176,7 +176,9 @@ class HomePageScreen extends ConsumerWidget {
                           width: 45,
                           height: 45,
                           child: ElevatedButton(
-                            onPressed: viewModel.pauseWorkTimer,
+                            onPressed: () {
+                              viewModel.pauseWorkTimer();
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xffE7E8E9),
                               padding: EdgeInsets.zero,

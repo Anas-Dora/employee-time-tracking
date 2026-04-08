@@ -7,10 +7,10 @@ final profileProvider = StateNotifierProvider<ProfileViewModel, Profile>((ref) {
 });
 
 const Profile _defaultProfile = Profile(
-  name: 'Anas Dora',
-  jobTitle: 'Software Developer',
-  company: 'United Internet AG',
-  employeeId: '00030397',
+  name: 'Max Mustermann',
+  jobTitle: 'Software Engineer',
+  company: '1&1 AG',
+  employeeId: '123456',
   department: 'Customer App Development',
   remindersEnabled: false,
 );

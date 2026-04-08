@@ -4,7 +4,7 @@ import 'package:path/path.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
-  static const int _dbVersion = 2;
+  static const int _dbVersion = 3;
 
   DatabaseHelper._internal();
 
@@ -53,11 +53,15 @@ class DatabaseHelper {
     ''');
 
     await _createHolidaysTable(db);
+    await _createWorkSegmentsTable(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await _createHolidaysTable(db);
+    }
+    if (oldVersion < 3) {
+      await _createWorkSegmentsTable(db);
     }
   }
 
@@ -73,6 +77,21 @@ class DatabaseHelper {
         UNIQUE(date, bundesland)
       )
     ''');
+  }
+
+  Future<void> _createWorkSegmentsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS work_segments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL,
+        start_time TEXT NOT NULL,
+        end_time TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_work_segments_date ON work_segments(date)',
+    );
   }
 
   // ────────────── DAY ENTRIES ──────────────
@@ -133,6 +152,78 @@ class DatabaseHelper {
     final db = await database;
     final dateStr = DateTime(date.year, date.month, date.day).toIso8601String();
     await db.delete('day_entries', where: 'date = ?', whereArgs: [dateStr]);
+    await db.delete('work_segments', where: 'date = ?', whereArgs: [dateStr]);
+  }
+
+  // ────────────── WORK SEGMENTS ──────────────
+
+  Future<void> insertWorkSegment({
+    required DateTime date,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    final db = await database;
+    final day = DateTime(date.year, date.month, date.day).toIso8601String();
+    await db.insert('work_segments', {
+      'date': day,
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime.toIso8601String(),
+    });
+  }
+
+  Future<void> replaceWorkSegmentsForDate({
+    required DateTime date,
+    required List<Map<String, String>> segments,
+  }) async {
+    final db = await database;
+    final day = DateTime(date.year, date.month, date.day).toIso8601String();
+
+    await db.transaction((txn) async {
+      await txn.delete('work_segments', where: 'date = ?', whereArgs: [day]);
+      for (final segment in segments) {
+        await txn.insert('work_segments', {
+          'date': day,
+          'start_time': segment['start_time'],
+          'end_time': segment['end_time'],
+        });
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getWorkSegmentsForDate(DateTime date) async {
+    final db = await database;
+    final day = DateTime(date.year, date.month, date.day).toIso8601String();
+    return db.query(
+      'work_segments',
+      where: 'date = ?',
+      whereArgs: [day],
+      orderBy: 'start_time ASC',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getWorkSegmentsForWeek(DateTime monday) async {
+    final db = await database;
+    final from = DateTime(monday.year, monday.month, monday.day).toIso8601String();
+    final sunday = monday.add(const Duration(days: 6));
+    final to = DateTime(sunday.year, sunday.month, sunday.day, 23, 59, 59).toIso8601String();
+    return db.query(
+      'work_segments',
+      where: 'date BETWEEN ? AND ?',
+      whereArgs: [from, to],
+      orderBy: 'date ASC, start_time ASC',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getWorkSegmentsForMonth(int year, int month) async {
+    final db = await database;
+    final from = DateTime(year, month, 1).toIso8601String();
+    final to = DateTime(year, month + 1, 0, 23, 59, 59).toIso8601String();
+    return db.query(
+      'work_segments',
+      where: 'date BETWEEN ? AND ?',
+      whereArgs: [from, to],
+      orderBy: 'date ASC, start_time ASC',
+    );
   }
 
   // ────────────── PROFILE ──────────────

@@ -16,6 +16,7 @@ const _kIsRunning = 'timer_is_running';
 const _kIsOnBreak = 'timer_is_on_break';
 const _kWorkStartMs = 'timer_work_start_ms';
 const _kBreakStartMs = 'timer_break_start_ms';
+const _kSessionStartMs = 'timer_session_start_ms';
 // Bereits akkumulierte Arbeitszeit in Sekunden (vor aktuellem Lauf)
 const _kAccumulatedWorkSec = 'timer_accumulated_work_sec';
 // Bereits akkumulierte Pausenzeit in Sekunden (vor aktuellem Lauf)
@@ -80,6 +81,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     required bool isOnBreak,
     DateTime? workStartedAt,
     DateTime? breakStartedAt,
+    DateTime? sessionStartedAt,
     required int accumulatedWorkSec,
     required int accumulatedBreakSec,
   }) async {
@@ -98,6 +100,11 @@ class HomeViewModel extends StateNotifier<HomeState> {
     } else {
       await prefs.remove(_kBreakStartMs);
     }
+    if (sessionStartedAt != null) {
+      await prefs.setInt(_kSessionStartMs, sessionStartedAt.millisecondsSinceEpoch);
+    } else {
+      await prefs.remove(_kSessionStartMs);
+    }
   }
 
   Future<void> _restoreTimerState() async {
@@ -108,6 +115,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     final accBreakSec = prefs.getInt(_kAccumulatedBreakSec) ?? 0;
     final workStartMs = prefs.getInt(_kWorkStartMs);
     final breakStartMs = prefs.getInt(_kBreakStartMs);
+    final sessionStartMs = prefs.getInt(_kSessionStartMs);
 
     if (!isRunning && !isOnBreak) {
       await _loadTodayFromDb();
@@ -132,8 +140,8 @@ class HomeViewModel extends StateNotifier<HomeState> {
       totalBreakSec += now.difference(breakStart).inSeconds;
     }
 
-    final startedAt = workStartMs != null
-        ? DateTime.fromMillisecondsSinceEpoch(workStartMs)
+    final startedAt = sessionStartMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(sessionStartMs)
         : (workStart ?? now);
 
     state = HomeState(
@@ -163,6 +171,8 @@ class HomeViewModel extends StateNotifier<HomeState> {
   Future<void> _loadTodayFromDb() async {
     final today = DateTime.now();
     final entry = await DatabaseHelper.instance.getDayEntry(today);
+    final segmentRows = await DatabaseHelper.instance.getWorkSegmentsForDate(today);
+    final segments = segmentRows.map(WorkSegment.fromMap).toList();
     if (entry == null) {
       state = state.copyWith(
         clearStartedAt: true,
@@ -172,7 +182,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
       return;
     }
 
-    final day = DayOverview.fromMap(entry);
+    final day = DayOverview.fromMap(entry).copyWith(segments: segments);
     if (day.type != DayType.workday) {
       state = state.copyWith(
         clearStartedAt: true,
@@ -183,9 +193,9 @@ class HomeViewModel extends StateNotifier<HomeState> {
     }
 
     final workedMinutes = day.workDuration?.inMinutes ?? 0;
-    final breakMinutes = day.breakDuration?.inMinutes ?? 0;
+    final breakMinutes = day.computedBreakDuration.inMinutes;
     state = state.copyWith(
-      startedAt: day.startTime,
+      startedAt: day.effectiveStartTime,
       workTime: WorkTime(
         hours: workedMinutes ~/ 60,
         minutes: workedMinutes % 60,
@@ -203,10 +213,65 @@ class HomeViewModel extends StateNotifier<HomeState> {
   // Timer-Steuerung
   // ──────────────────────────────────────────────────────────────
 
-  void startWorkTimer() {
-    if (state.isOnBreak) {
-      pauseBreakTimer();
+  Future<void> _storeCurrentRunningSegment(DateTime endTime) async {
+    final prefs = await SharedPreferences.getInstance();
+    final workStartMs = prefs.getInt(_kWorkStartMs);
+    if (workStartMs == null) return;
+
+    final startTime = DateTime.fromMillisecondsSinceEpoch(workStartMs);
+    if (!endTime.isAfter(startTime)) return;
+
+    await DatabaseHelper.instance.insertWorkSegment(
+      date: startTime,
+      startTime: startTime,
+      endTime: endTime,
+    );
+  }
+
+  void startWorkTimer() async {
+    if (!state.isRunning && !state.isOnBreak && state.startedAt == null) {
+      await _loadTodayFromDb();
     }
+
+    // Wenn Pause läuft: beende Pause und zähle Pausenzeit
+    if (state.isOnBreak) {
+      final prefs = await SharedPreferences.getInstance();
+      final breakStartMs = prefs.getInt(_kBreakStartMs);
+      final currentBreakSec =
+          state.breakTime.hours * 3600 + state.breakTime.minutes * 60 + state.breakTime.seconds;
+      int addBreakSec = 0;
+
+      if (breakStartMs != null) {
+        final breakStart = DateTime.fromMillisecondsSinceEpoch(breakStartMs);
+        final now = DateTime.now();
+        addBreakSec = now.difference(breakStart).inSeconds;
+      }
+
+      _timer?.cancel();
+      final accWorkSec =
+          state.workTime.hours * 3600 + state.workTime.minutes * 60 + state.workTime.seconds;
+      final accBreakSec = currentBreakSec + addBreakSec;
+
+      _saveTimerState(
+        isRunning: true,
+        isOnBreak: false,
+        workStartedAt: DateTime.now(),
+        sessionStartedAt: state.startedAt,
+        accumulatedWorkSec: accWorkSec,
+        accumulatedBreakSec: accBreakSec,
+      );
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+      state = state.copyWith(
+        isRunning: true,
+        isOnBreak: false,
+        breakTime: _secondsToWorkTime(accBreakSec),
+      );
+      _syncScheduledNotifications();
+      return;
+    }
+
+    // Wenn Arbeit nicht läuft: starte Arbeit
     if (!state.isRunning) {
       final workStart = DateTime.now();
       final startedAt = state.startedAt ?? workStart;
@@ -219,6 +284,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
         isRunning: true,
         isOnBreak: false,
         workStartedAt: workStart,
+        sessionStartedAt: startedAt,
         accumulatedWorkSec: accWorkSec,
         accumulatedBreakSec: accBreakSec,
       );
@@ -233,29 +299,41 @@ class HomeViewModel extends StateNotifier<HomeState> {
     }
   }
 
-  void startBreakTimer() {
-    if (!state.isOnBreak) {
-      pauseWorkTimer();
-      final breakStart = DateTime.now();
-      final accWorkSec =
-          state.workTime.hours * 3600 + state.workTime.minutes * 60 + state.workTime.seconds;
-      final accBreakSec =
-          state.breakTime.hours * 3600 + state.breakTime.minutes * 60 + state.breakTime.seconds;
+  void startBreakTimer() async {
+    if (!state.isRunning) return;
 
-      _saveTimerState(
-        isRunning: false,
-        isOnBreak: true,
-        breakStartedAt: breakStart,
-        accumulatedWorkSec: accWorkSec,
-        accumulatedBreakSec: accBreakSec,
-      );
+    // Speichere den Arbeits-Segment
+    await _storeCurrentRunningSegment(DateTime.now());
 
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tickBreak());
-      state = state.copyWith(isOnBreak: true, isRunning: false);
-    }
+    // Starte Pausen-Timer
+    _timer?.cancel();
+    final breakStart = DateTime.now();
+    final accWorkSec =
+        state.workTime.hours * 3600 + state.workTime.minutes * 60 + state.workTime.seconds;
+    final accBreakSec =
+        state.breakTime.hours * 3600 + state.breakTime.minutes * 60 + state.breakTime.seconds;
+
+    _saveTimerState(
+      isRunning: false,
+      isOnBreak: true,
+      breakStartedAt: breakStart,
+      sessionStartedAt: state.startedAt,
+      accumulatedWorkSec: accWorkSec,
+      accumulatedBreakSec: accBreakSec,
+    );
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tickBreak());
+    state = state.copyWith(
+      isRunning: false,
+      isOnBreak: true,
+    );
   }
 
-  void pauseWorkTimer() {
+  Future<void> pauseWorkTimer() async {
+    if (state.isRunning) {
+      await _storeCurrentRunningSegment(DateTime.now());
+    }
+
     _timer?.cancel();
     final accWorkSec =
         state.workTime.hours * 3600 + state.workTime.minutes * 60 + state.workTime.seconds;
@@ -264,11 +342,13 @@ class HomeViewModel extends StateNotifier<HomeState> {
     _saveTimerState(
       isRunning: false,
       isOnBreak: false,
+      sessionStartedAt: state.startedAt,
       accumulatedWorkSec: accWorkSec,
       accumulatedBreakSec: accBreakSec,
     );
     state = state.copyWith(isRunning: false);
   }
+
 
   void pauseBreakTimer() {
     _timer?.cancel();
@@ -279,6 +359,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     _saveTimerState(
       isRunning: false,
       isOnBreak: false,
+      sessionStartedAt: state.startedAt,
       accumulatedWorkSec: accWorkSec,
       accumulatedBreakSec: accBreakSec,
     );
@@ -289,34 +370,67 @@ class HomeViewModel extends StateNotifier<HomeState> {
     _timer?.cancel();
 
     final now = DateTime.now();
-    final wt = state.workTime;
-    final bt = state.breakTime;
-    final startedAt = state.startedAt ??
-        now.subtract(Duration(
-          hours: wt.hours,
-          minutes: wt.minutes,
-          seconds: wt.seconds,
-        ));
+    // Speichere laufenden Segment falls Arbeit noch läuft
+    if (state.isRunning) {
+      await _storeCurrentRunningSegment(now);
+    }
+
+    final today = DateTime(now.year, now.month, now.day);
+    final segmentsRaw = await DatabaseHelper.instance.getWorkSegmentsForDate(today);
+    final segments = segmentsRaw.map(WorkSegment.fromMap).toList();
+
+    if (segments.isEmpty) {
+      // Keine Segmente: reset
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kIsRunning);
+      await prefs.remove(_kIsOnBreak);
+      await prefs.remove(_kWorkStartMs);
+      await prefs.remove(_kBreakStartMs);
+      await prefs.remove(_kSessionStartMs);
+      await prefs.remove(_kAccumulatedWorkSec);
+      await prefs.remove(_kAccumulatedBreakSec);
+
+      state = state.copyWith(
+        isRunning: false,
+        isOnBreak: false,
+        clearStartedAt: true,
+        workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+        breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+      );
+      NotificationService.instance.resetDailyFlags();
+      await NotificationService.instance.syncBackgroundSchedules(
+        isRunning: false,
+        workSeconds: 0,
+        breakSeconds: 0,
+      );
+      return;
+    }
+
+    // Berechne Gesamtarbeitszeit aus Segmenten
+    final workedSeconds = segments.fold<int>(
+      0,
+      (sum, segment) => sum + segment.duration.inSeconds,
+    );
+    // Pausenzeit: nur die manuell gezählte (nicht aus Lücken)
+    final breakSeconds =
+        state.breakTime.hours * 3600 + state.breakTime.minutes * 60 + state.breakTime.seconds;
 
     final day = DayOverview(
-      date: DateTime(now.year, now.month, now.day),
+      date: today,
       type: DayType.workday,
-      startTime: startedAt,
-      endTime: now,
-      breakDuration: Duration(
-        hours: bt.hours,
-        minutes: bt.minutes,
-        seconds: bt.seconds,
-      ),
+      startTime: segments.first.startTime,
+      endTime: segments.last.endTime,
+      breakDuration: Duration(seconds: breakSeconds),
+      segments: segments,
     );
     await DatabaseHelper.instance.upsertDayEntry(day.toMap());
 
-    // SharedPreferences leeren
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kIsRunning);
     await prefs.remove(_kIsOnBreak);
     await prefs.remove(_kWorkStartMs);
     await prefs.remove(_kBreakStartMs);
+    await prefs.remove(_kSessionStartMs);
     await prefs.remove(_kAccumulatedWorkSec);
     await prefs.remove(_kAccumulatedBreakSec);
 
@@ -324,11 +438,10 @@ class HomeViewModel extends StateNotifier<HomeState> {
       isRunning: false,
       isOnBreak: false,
       clearStartedAt: true,
-      workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
-      breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+      workTime: _secondsToWorkTime(workedSeconds),
+      breakTime: _secondsToWorkTime(breakSeconds),
     );
 
-    // Benachrichtigungs-Flags für den nächsten Arbeitstag zurücksetzen
     NotificationService.instance.resetDailyFlags();
     await NotificationService.instance.syncBackgroundSchedules(
       isRunning: false,

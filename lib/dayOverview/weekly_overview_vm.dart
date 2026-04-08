@@ -60,18 +60,32 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
 
     final dbEntries =
         await DatabaseHelper.instance.getDayEntriesForWeek(monday);
+    final segmentRows =
+        await DatabaseHelper.instance.getWorkSegmentsForWeek(monday);
+
+    final Map<String, List<WorkSegment>> segmentsByDate = {};
+    for (final row in segmentRows) {
+      final key = DateTime.parse(row['date'] as String);
+      final dateKey = '${key.year}-${key.month}-${key.day}';
+      segmentsByDate.putIfAbsent(dateKey, () => []).add(WorkSegment.fromMap(row));
+    }
 
     final Map<String, DayOverview> dbMap = {};
     for (final entry in dbEntries) {
       final day = DayOverview.fromMap(entry);
       final key = '${day.date.year}-${day.date.month}-${day.date.day}';
-      dbMap[key] = day;
+      dbMap[key] = day.copyWith(segments: segmentsByDate[key] ?? const []);
     }
 
     final List<DayOverview> baseDays = List.generate(5, (i) {
       final d = monday.add(Duration(days: i));
       final key = '${d.year}-${d.month}-${d.day}';
-      return dbMap[key] ?? DayOverview(date: d, type: DayType.none);
+      return dbMap[key] ??
+          DayOverview(
+            date: d,
+            type: DayType.none,
+            segments: segmentsByDate[key] ?? const [],
+          );
     });
 
     final holidayFlags = await Future.wait(
@@ -87,6 +101,7 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
         startTime: null,
         endTime: null,
         breakDuration: null,
+        clearSegments: true,
       );
     });
 
@@ -156,6 +171,9 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
         startTime: startDateTime,
         endTime: endDateTime,
         breakDuration: pause,
+        segments: type == DayType.workday && startDateTime != null && endDateTime != null
+            ? [WorkSegment(startTime: startDateTime, endTime: endDateTime)]
+            : const [],
       );
     }).toList();
 
@@ -166,6 +184,10 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
       (d) => _isSameDay(d.date, date),
     );
     await DatabaseHelper.instance.upsertDayEntry(updatedDay.toMap());
+    await DatabaseHelper.instance.replaceWorkSegmentsForDate(
+      date: date,
+      segments: updatedDay.orderedSegments.map((s) => s.toDbMap()).toList(),
+    );
   }
 
   bool _isSameDay(DateTime first, DateTime second) {
@@ -190,6 +212,7 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
         startTime: null,
         endTime: null,
         breakDuration: null,
+        clearSegments: true,
       );
     }).toList();
 

@@ -61,11 +61,22 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
     // Alle gespeicherten Einträge aus der DB laden
     final dbEntries = await DatabaseHelper.instance
         .getDayEntriesForMonth(date.year, date.month);
+    final segmentRows = await DatabaseHelper.instance
+        .getWorkSegmentsForMonth(date.year, date.month);
+
+    final Map<String, List<WorkSegment>> segmentsByDate = {};
+    for (final row in segmentRows) {
+      final segDate = DateTime.parse(row['date'] as String);
+      final key = '${segDate.year}-${segDate.month}-${segDate.day}';
+      segmentsByDate.putIfAbsent(key, () => []).add(WorkSegment.fromMap(row));
+    }
 
     // DB-Einträge nach Datum indexieren
     final Map<String, WorkDay> dbMap = {};
     for (final entry in dbEntries) {
-      final wd = WorkDay.fromMap(entry);
+      final wdBase = WorkDay.fromMap(entry);
+      final wdKey = '${wdBase.date.year}-${wdBase.date.month}-${wdBase.date.day}';
+      final wd = wdBase.copyWith(segments: segmentsByDate[wdKey] ?? const []);
       // Berechnete Felder (total, diff) neu berechnen
       final computed = _computeWorkDay(wd);
       final dateKey =
@@ -131,6 +142,10 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
 
   /// Berechnet total und diff für einen WorkDay (helper)
   WorkDay _computeWorkDay(WorkDay wd) {
+    if (wd.type == DayType.workday && wd.segments.isNotEmpty) {
+      return _computeWorkDayFromSegments(wd);
+    }
+
     const int targetMinutes = 8 * 60;
     String totalStr = '-';
     String diffStr = '-';
@@ -162,6 +177,44 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
     }
 
     return wd.copyWith(total: totalStr, diff: diffStr);
+  }
+
+  WorkDay _computeWorkDayFromSegments(WorkDay wd) {
+    const int targetMinutes = 8 * 60;
+    final ordered = List<WorkSegment>.from(wd.segments)
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    final startLines = ordered
+        .map((segment) => DateFormat('HH:mm').format(segment.startTime))
+        .join('\n');
+    final endLines = ordered
+        .map((segment) => DateFormat('HH:mm').format(segment.endTime))
+        .join('\n');
+
+    int workedMinutes = 0;
+    int breakMinutes = 0;
+    for (int i = 0; i < ordered.length; i++) {
+      workedMinutes += ordered[i].duration.inMinutes;
+      if (i > 0) {
+        final pause = ordered[i].startTime.difference(ordered[i - 1].endTime).inMinutes;
+        if (pause > 0) {
+          breakMinutes += pause;
+        }
+      }
+    }
+
+    final totalStr = _minutesToTimeString(workedMinutes);
+    final diffMinutes = workedMinutes - targetMinutes;
+    final sign = diffMinutes >= 0 ? '+' : '-';
+    final diffStr = '$sign${_minutesToTimeString(diffMinutes.abs())}';
+
+    return wd.copyWith(
+      start: startLines,
+      end: endLines,
+      pause: breakMinutes.toString(),
+      total: totalStr,
+      diff: diffStr,
+    );
   }
 
   Future<void> _updateDayDetails({
@@ -230,6 +283,17 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
       diff: diffStr,
     );
     await DatabaseHelper.instance.upsertDayEntry(updatedWd.toMap());
+    await DatabaseHelper.instance.replaceWorkSegmentsForDate(
+      date: date,
+      segments: type == DayType.workday && start != null && end != null
+          ? [
+              WorkSegment(
+                startTime: DateTime(date.year, date.month, date.day, start.hour, start.minute),
+                endTime: DateTime(date.year, date.month, date.day, end.hour, end.minute),
+              ).toDbMap(),
+            ]
+          : const [],
+    );
   }
 
   String _minutesToTimeString(int minutes) {
@@ -429,7 +493,8 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
   TimeOfDay? parseTimeOfDay(String time) {
     if (time == '-' || time.isEmpty) return null;
     try {
-      final parts = time.split(':');
+      final normalized = time.split('\n').first.trim();
+      final parts = normalized.split(':');
       return TimeOfDay(
           hour: int.parse(parts[0]), minute: int.parse(parts[1]));
     } catch (e) {

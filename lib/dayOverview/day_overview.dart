@@ -1,6 +1,29 @@
 
 enum DayType { workday, sick, vacation, none }
 
+class WorkSegment {
+  final DateTime startTime;
+  final DateTime endTime;
+
+  WorkSegment({required this.startTime, required this.endTime});
+
+  Duration get duration => endTime.difference(startTime);
+
+  Map<String, String> toDbMap() {
+    return {
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime.toIso8601String(),
+    };
+  }
+
+  factory WorkSegment.fromMap(Map<String, dynamic> map) {
+    return WorkSegment(
+      startTime: DateTime.parse(map['start_time'] as String),
+      endTime: DateTime.parse(map['end_time'] as String),
+    );
+  }
+}
+
 class DayOverview {
   final DateTime date;
   final DayType type;
@@ -8,6 +31,7 @@ class DayOverview {
   final DateTime? startTime;
   final DateTime? endTime;
   final Duration? breakDuration;
+  final List<WorkSegment> segments;
 
   DayOverview({
     required this.date,
@@ -16,6 +40,7 @@ class DayOverview {
     this.startTime,
     this.endTime,
     this.breakDuration,
+    this.segments = const [],
   });
 
   DayOverview copyWith({
@@ -25,6 +50,8 @@ class DayOverview {
     DateTime? startTime,
     DateTime? endTime,
     Duration? breakDuration,
+    List<WorkSegment>? segments,
+    bool clearSegments = false,
   }) {
     return DayOverview(
       date: date ?? this.date,
@@ -33,12 +60,54 @@ class DayOverview {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       breakDuration: breakDuration ?? this.breakDuration,
+      segments: clearSegments ? const [] : (segments ?? this.segments),
     );
+  }
+
+  List<WorkSegment> get orderedSegments {
+    if (segments.isEmpty) return const [];
+    final copy = List<WorkSegment>.from(segments)
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+    return copy;
+  }
+
+  DateTime? get effectiveStartTime {
+    if (orderedSegments.isNotEmpty) return orderedSegments.first.startTime;
+    return startTime;
+  }
+
+  DateTime? get effectiveEndTime {
+    if (orderedSegments.isNotEmpty) return orderedSegments.last.endTime;
+    return endTime;
+  }
+
+  Duration get computedBreakDuration {
+    final ordered = orderedSegments;
+    if (ordered.length <= 1) {
+      return breakDuration ?? Duration.zero;
+    }
+
+    Duration total = Duration.zero;
+    for (int i = 1; i < ordered.length; i++) {
+      final gap = ordered[i].startTime.difference(ordered[i - 1].endTime);
+      if (!gap.isNegative) {
+        total += gap;
+      }
+    }
+    return total;
   }
 
   Duration? get workDuration {
     if (isHoliday) return null;
     if (type != DayType.workday) return null;
+
+    if (orderedSegments.isNotEmpty) {
+      return orderedSegments.fold<Duration>(
+        Duration.zero,
+        (sum, segment) => sum + segment.duration,
+      );
+    }
+
     if (startTime == null || endTime == null) return null;
 
     final pause = breakDuration ?? Duration.zero;

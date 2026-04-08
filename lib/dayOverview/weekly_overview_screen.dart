@@ -11,6 +11,58 @@ import 'day_overview.dart';
 class WeeklyOverviewScreen extends ConsumerWidget {
   const WeeklyOverviewScreen({super.key});
 
+  static String _formatDuration(Duration value) {
+    final h = value.inHours;
+    final m = value.inMinutes.remainder(60);
+    return '${h}h ${m}m';
+  }
+
+  static void _showSegmentsSheet(BuildContext context, DayOverview day) {
+    if (day.orderedSegments.isEmpty) return;
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Arbeitszeiten am ${DateFormat('dd.MM.yyyy', 'de_DE').format(day.date)}',
+                  style: GoogleFonts.manrope(
+                    textStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF002863),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                for (final segment in day.orderedSegments)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      '${DateFormat('HH:mm').format(segment.startTime)} - ${DateFormat('HH:mm').format(segment.endTime)}',
+                      style: GoogleFonts.inter(
+                        textStyle: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                const Divider(height: 20),
+                Text('Gesamtarbeitszeit: ${_formatDuration(day.workDuration ?? Duration.zero)}'),
+                const SizedBox(height: 4),
+                Text('Gesamtpause: ${_formatDuration(day.computedBreakDuration)}'),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final week = ref.watch(weeklyOverviewProvider);
@@ -22,8 +74,15 @@ class WeeklyOverviewScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        title: const Text(
+          'Zeitify',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
-        title: const Text('Weekly Overview'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -381,7 +440,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                             child: day.isHoliday
                                 ? SizedBox.shrink()
                                 : Text(
-                                    "${day.type == DayType.workday && day.startTime != null ? DateFormat('HH:mm').format(day.startTime!) : '00:00'} - ${day.type == DayType.workday && day.endTime != null ? DateFormat('HH:mm').format(day.endTime!) : '00:00'}",
+                                    "${day.type == DayType.workday && day.effectiveStartTime != null ? DateFormat('HH:mm').format(day.effectiveStartTime!) : '00:00'} - ${day.type == DayType.workday && day.effectiveEndTime != null ? DateFormat('HH:mm').format(day.effectiveEndTime!) : '00:00'}",
                                     style: GoogleFonts.inter(
                                       textStyle: TextStyle(
                                         color: secondaryTextColor,
@@ -433,16 +492,19 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                             ),
                             ConstrainedBox(
                               constraints: BoxConstraints(minWidth: isSmall ? 70 : 90),
-                              child: Text(
-                                '${day.workDuration?.inHours ?? 0}h ${day.workDuration?.inMinutes.remainder(60) ?? 0}m',
-                                style: GoogleFonts.manrope(
-                                  textStyle: TextStyle(
-                                    color: secondaryTextColor,
-                                    fontSize: valueFontSize,
-                                    fontWeight: FontWeight.w700,
+                              child: GestureDetector(
+                                onLongPress: () => _showSegmentsSheet(context, day),
+                                child: Text(
+                                  '${day.workDuration?.inHours ?? 0}h ${day.workDuration?.inMinutes.remainder(60) ?? 0}m',
+                                  style: GoogleFonts.manrope(
+                                    textStyle: TextStyle(
+                                      color: secondaryTextColor,
+                                      fontSize: valueFontSize,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ),
                           ],
@@ -463,7 +525,7 @@ class WeeklyOverviewScreen extends ConsumerWidget {
                             ConstrainedBox(
                               constraints: BoxConstraints(minWidth: isSmall ? 55 : 70),
                               child: Text(
-                                '${day.type == DayType.workday && day.breakDuration != null ? day.breakDuration?.inMinutes : "0"}m',
+                                '${day.type == DayType.workday ? day.computedBreakDuration.inMinutes : 0}m',
                                 style: GoogleFonts.manrope(
                                   textStyle: TextStyle(
                                     color: secondaryTextColor,

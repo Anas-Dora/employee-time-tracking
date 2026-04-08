@@ -34,7 +34,7 @@ class WeekOverview {
 
     int totalMinutes = workdays.fold(
       0,
-      (prev, day) => prev + (day.breakDuration?.inMinutes ?? 0),
+      (prev, day) => prev + day.computedBreakDuration.inMinutes,
     );
     return Duration(minutes: totalMinutes ~/ workdays.length);
   }

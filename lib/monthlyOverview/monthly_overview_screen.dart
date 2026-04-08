@@ -22,8 +22,15 @@ class MonthlyOverviewScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        title: const Text(
+          'Zeitify',
+          style: TextStyle(
+            color: AppColors.primary,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
-        title: const Text('Monthly Overview'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -484,6 +491,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(8.0),
         child: Text(
           text,
+          textAlign: TextAlign.center,
           style: GoogleFonts.inter(fontSize: 16, color: Color(0xFF191C1D)),
         ),
       ),

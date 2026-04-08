@@ -9,6 +9,7 @@ class WorkDay {
   final String diff;
   final DayType type;
   final bool isHoliday;
+  final List<WorkSegment> segments;
 
   WorkDay({
     required this.date,
@@ -19,6 +20,7 @@ class WorkDay {
     this.diff = '-',
     this.type = DayType.none,
     this.isHoliday = false,
+    this.segments = const [],
   });
 
   WorkDay copyWith({
@@ -30,6 +32,7 @@ class WorkDay {
     String? diff,
     DayType? type,
     bool? isHoliday,
+    List<WorkSegment>? segments,
   }) {
     return WorkDay(
       date: date ?? this.date,
@@ -40,6 +43,7 @@ class WorkDay {
       diff: diff ?? this.diff,
       type: type ?? this.type,
       isHoliday: isHoliday ?? this.isHoliday,
+      segments: segments ?? this.segments,
     );
   }
 
@@ -112,6 +116,7 @@ class WorkDay {
       start: startStr,
       end: endStr,
       pause: pauseStr,
+      segments: const [],
     );
   }
 }

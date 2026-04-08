@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
     <application
-        android:label="employee_time_tracking"
+        android:label="Zeitify"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
