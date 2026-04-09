@@ -169,27 +169,6 @@ class HomePageScreen extends ConsumerWidget {
                       ),
                     ),
                     SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 45,
-                          height: 45,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              viewModel.pauseWorkTimer();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.softOutline,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: Icon(Icons.pause),
-                          ),
-                        ),
-                        SizedBox(width: 10),
                         SizedBox(
                           width: 45,
                           height: 45,
@@ -206,8 +185,6 @@ class HomePageScreen extends ConsumerWidget {
                             child: Icon(Icons.stop),
                           ),
                         ),
-                      ],
-                    ),
                   ],
                 ),
               ),

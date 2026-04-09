@@ -52,16 +52,14 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 10),
-               SizedBox(
-                 width: ResponsiveUtils.isMediumDevice(context) ? 180 : 290,
-                 height: 55,
-                 child: ElevatedButton.icon(
+              SizedBox(
+                width: ResponsiveUtils.isMediumDevice(context) ? 180 : 290,
+                height: 55,
+                child: ElevatedButton.icon(
                   onPressed: () {
                     showDialog(
                       context: context,
-                      builder: (_) => YearlyPdfExportDialog(
-                        profile: profile,
-                      ),
+                      builder: (_) => YearlyPdfExportDialog(profile: profile),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -109,7 +107,11 @@ class ProfileScreen extends ConsumerWidget {
                               Text(
                                 profile.name,
                                 style: GoogleFonts.manrope(
-                                  fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
+                                  fontSize:
+                                      ResponsiveUtils.getResponsiveFontSize(
+                                        context,
+                                        32,
+                                      ),
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.brandPrimary,
                                 ),
@@ -140,20 +142,23 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 32),
-               Container(
-                 width: double.infinity,
-                 padding: ResponsiveUtils.getResponsivePadding(context),
-                 decoration: BoxDecoration(
-                   color: AppColors.cardBackground,
-                   borderRadius: BorderRadius.circular(12),
-                 ),
-                 child: Column(
+              Container(
+                width: double.infinity,
+                padding: ResponsiveUtils.getResponsivePadding(context),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Einstellungen',
                       style: GoogleFonts.manrope(
-                        fontSize: ResponsiveUtils.getResponsiveFontSize(context, 32),
+                        fontSize: ResponsiveUtils.getResponsiveFontSize(
+                          context,
+                          32,
+                        ),
                         fontWeight: FontWeight.w700,
                         color: AppColors.brandPrimary,
                       ),
@@ -182,13 +187,28 @@ class ProfileScreen extends ConsumerWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Erinnerungen',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Erinnerungen',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () =>
+                                          _showReminderInfoDialog(context),
+                                      icon: const Icon(Icons.info_outline),
+                                      iconSize: 18,
+                                      color: AppColors.secondaryTextColor,
+                                      tooltip:
+                                          'Welche Benachrichtigungen gibt es?',
+                                      visualDensity: VisualDensity.compact,
+                                      constraints: const BoxConstraints(),
+                                    ),
+                                  ],
                                 ),
                                 Text(
                                   'Push-Benachrichtigungen',
@@ -206,10 +226,13 @@ class ProfileScreen extends ConsumerWidget {
                         Switch(
                           value: profile.remindersEnabled,
                           onChanged: (value) async {
-                            final remindersEnabled =
-                                await vm.toggleReminders(value);
+                            final remindersEnabled = await vm.toggleReminders(
+                              value,
+                            );
 
-                            if (!context.mounted || !value || remindersEnabled) {
+                            if (!context.mounted ||
+                                !value ||
+                                remindersEnabled) {
                               return;
                             }
 
@@ -223,7 +246,7 @@ class ProfileScreen extends ConsumerWidget {
                           },
                           trackColor: WidgetStateProperty<Color?>.fromMap(
                             <WidgetStatesConstraint, Color>{
-                              WidgetState.selected: AppColors.brandPrimary
+                              WidgetState.selected: AppColors.brandPrimary,
                             },
                           ),
                           thumbColor: const WidgetStatePropertyAll<Color>(
@@ -238,6 +261,29 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _showReminderInfoDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Benachrichtigungen bei Erinnerungen'),
+        content: const Text(
+          'Wenn Erinnerungen aktiviert sind, bekommst du Hinweise bei wichtigen Zeitgrenzen:\n\n'
+          '- Nach 6 Stunden Arbeit, falls weniger als 30 Minuten Pause erfasst sind.\n'
+          '- Nach 9 Stunden Arbeit, falls insgesamt weniger als 45 Minuten Pause erfasst sind.\n'
+          '- Beim Ueberschreiten von 8 Stunden Arbeitszeit.\n'
+          '- Eine deutliche Warnung beim Ueberschreiten von 10 Stunden Arbeitszeit.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Verstanden'),
+          ),
+        ],
       ),
     );
   }
@@ -258,6 +304,7 @@ class ProfileScreen extends ConsumerWidget {
     final result = await showDialog<Profile>(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
         title: const Text('Profil bearbeiten'),
         content: SingleChildScrollView(
           child: Column(
@@ -300,6 +347,20 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               );
             },
+            style:
+                ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.actionBackground,
+                  foregroundColor: AppColors.brandPrimary,
+                ).copyWith(
+                  overlayColor: MaterialStateProperty.resolveWith<Color?>((
+                    states,
+                  ) {
+                    if (states.contains(MaterialState.pressed)) {
+                      return AppColors.overlayPrimaryPressed;
+                    }
+                    return null;
+                  }),
+                ),
             child: const Text('Speichern'),
           ),
         ],

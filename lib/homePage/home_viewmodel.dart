@@ -406,27 +406,6 @@ class HomeViewModel extends StateNotifier<HomeState> {
     );
   }
 
-  Future<void> pauseWorkTimer() async {
-    if (state.isRunning) {
-      await _storeCurrentRunningSegment(DateTime.now());
-    }
-
-    _timer?.cancel();
-    final accWorkSec =
-        state.workTime.hours * 3600 + state.workTime.minutes * 60 + state.workTime.seconds;
-    final accBreakSec =
-        state.breakTime.hours * 3600 + state.breakTime.minutes * 60 + state.breakTime.seconds;
-    _saveTimerState(
-      isRunning: false,
-      isOnBreak: false,
-      sessionStartedAt: state.startedAt,
-      accumulatedWorkSec: accWorkSec,
-      accumulatedBreakSec: accBreakSec,
-    );
-    state = state.copyWith(isRunning: false);
-  }
-
-
   void pauseBreakTimer() {
     _timer?.cancel();
     final accWorkSec =
@@ -500,6 +479,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
       breakDuration: Duration(seconds: breakSeconds),
       segments: segments,
     );
+    final netWorkedSeconds = (day.workDuration?.inSeconds ?? workedSeconds).clamp(0, 8640000).toInt();
     await DatabaseHelper.instance.upsertDayEntry(day.toMap());
 
     final prefs = await SharedPreferences.getInstance();
@@ -515,7 +495,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
       isRunning: false,
       isOnBreak: false,
       clearStartedAt: true,
-      workTime: _secondsToWorkTime(workedSeconds),
+      workTime: _secondsToWorkTime(netWorkedSeconds),
       breakTime: _secondsToWorkTime(breakSeconds),
     );
 
@@ -559,6 +539,14 @@ class HomeViewModel extends StateNotifier<HomeState> {
     if (s >= 60) { s = 0; m++; }
     if (m >= 60) { m = 0; h++; }
     state = state.copyWith(breakTime: bt.copyWith(hours: h, minutes: m, seconds: s));
+
+    final wt = state.workTime;
+    final workSec = wt.hours * 3600 + wt.minutes * 60 + wt.seconds;
+    final breakSec = h * 3600 + m * 60 + s;
+    NotificationService.instance.checkAndNotify(
+      workSeconds: workSec,
+      breakSeconds: breakSec,
+    );
   }
 
   // ──────────────────────────────────────────────────────────────

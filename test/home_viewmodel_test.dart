@@ -44,7 +44,6 @@ void main() {
     expect(vm.state.startedAt, isNotNull);
     expect(workSeconds, greaterThanOrEqualTo(1));
 
-    await vm.pauseWorkTimer();
     vm.dispose();
   });
 
@@ -69,7 +68,6 @@ void main() {
     expect(vm.state.isRunning, isTrue);
     expect(workSeconds, greaterThanOrEqualTo(150));
 
-    await vm.pauseWorkTimer();
     vm.dispose();
   });
 
@@ -127,7 +125,6 @@ void main() {
     expect(breakSec, 30 * 60);
     expect(afterWorkSec, lessThan(beforeWorkSec));
 
-    await vm.pauseWorkTimer();
     vm.dispose();
   });
 

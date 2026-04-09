@@ -63,7 +63,10 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                             vm.formattedMonth,
                             style: GoogleFonts.manrope(
                               color: AppColors.brandPrimary,
-                              fontSize: ResponsiveUtils.getResponsiveFontSize(context, 30),
+                              fontSize: ResponsiveUtils.getResponsiveFontSize(
+                                context,
+                                30,
+                              ),
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -129,87 +132,90 @@ class MonthlyOverviewScreen extends ConsumerWidget {
                 ),
               ),
               SizedBox(height: 20),
-               Container(
-                 padding: const EdgeInsets.all(6.0),
-                 decoration: BoxDecoration(
-                   color: AppColors.cardBackground,
-                   borderRadius: BorderRadius.circular(12),
-                 ),
-                 child: SingleChildScrollView(
-                   scrollDirection: Axis.horizontal,
-                   child: ConstrainedBox(
-                     constraints: BoxConstraints(minWidth: 900),
-                     child: SingleChildScrollView(
-                       scrollDirection: Axis.vertical,
-                       child: Table(
-                          border: TableBorder.all(
-                            color: AppColors.softOutline,
-                            width: 1,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          columnWidths: const {
-                            0: FlexColumnWidth(),
-                            1: FlexColumnWidth(),
-                            2: FlexColumnWidth(),
-                            3: FlexColumnWidth(),
-                            4: FlexColumnWidth(),
-                            5: FlexColumnWidth(),
-                          },
-                          children: [
-                            // Header Row
-                            TableRow(
-                              decoration: BoxDecoration(
-                                color: AppColors.subtleSurface,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(12),
-                                  topRight: Radius.circular(12),
-                                ),
+              Container(
+                padding: const EdgeInsets.all(6.0),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: 900),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: Table(
+                        border: TableBorder.all(
+                          color: AppColors.softOutline,
+                          width: 1,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        columnWidths: const {
+                          0: FlexColumnWidth(),
+                          1: FlexColumnWidth(),
+                          2: FlexColumnWidth(),
+                          3: FlexColumnWidth(),
+                          4: FlexColumnWidth(),
+                          5: FlexColumnWidth(),
+                        },
+                        children: [
+                          // Header Row
+                          TableRow(
+                            decoration: BoxDecoration(
+                              color: AppColors.subtleSurface,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
                               ),
-                              children: [
-                                _header('Datum'),
-                                _header('Start'),
-                                _header('Ende'),
-                                _header('Pause'),
-                                _header('Gesamtzeit'),
-                                _header('+/- Stunden'),
-                              ],
                             ),
-                            ...state.days.map((day) {
-                              return _row(context, ref, day, vm);
-                            }),
-                         ],
-                       ),
-                     ),
-                   ),
-                 ),
-               ),
-               SizedBox(height: 20),
-               Container(
-                 padding: ResponsiveUtils.getResponsivePadding(context),
-                 width: double.infinity,
-                 decoration: BoxDecoration(
-                   color: AppColors.subtleSurface,
-                   borderRadius: BorderRadius.circular(12),
-                 ),
-                 child: Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                     Row(
-                       children: [
-                         Icon(
-                           Icons.notifications_active_outlined,
-                           size: 24,
-                           color: AppColors.primary,
-                         ),
-                         SizedBox(width: 10),
-                         Text(
-                           'Monatliche Benachrichtigungen',
-                           style: GoogleFonts.manrope(
-                             color: AppColors.primary,
-                             fontSize: ResponsiveUtils.getResponsiveFontSize(context, 16),
-                             fontWeight: FontWeight.w600,
-                           ),
-                         ),
+                            children: [
+                              _header('Datum'),
+                              _header('Start'),
+                              _header('Ende'),
+                              _header('Pause'),
+                              _header('Gesamtzeit'),
+                              _header('+/- Stunden'),
+                            ],
+                          ),
+                          ...state.days.map((day) {
+                            return _row(context, ref, day, vm);
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              Container(
+                padding: ResponsiveUtils.getResponsivePadding(context),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.subtleSurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.notifications_active_outlined,
+                          size: 24,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Monatliche Benachrichtigungen',
+                          style: GoogleFonts.manrope(
+                            color: AppColors.primary,
+                            fontSize: ResponsiveUtils.getResponsiveFontSize(
+                              context,
+                              16,
+                            ),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                     SizedBox(height: 20),
@@ -394,46 +400,48 @@ class MonthlyOverviewScreen extends ConsumerWidget {
     }
   }
 
-   static Widget _infoBox(String title, double value) {
-     return Expanded(
-       child: Container(
-         padding: EdgeInsets.all(8),
-         decoration: BoxDecoration(
-           color: AppColors.subtleSurface,
-           borderRadius: BorderRadius.circular(8),
-         ),
-         child: Column(
-           mainAxisAlignment: MainAxisAlignment.center,
-           crossAxisAlignment: CrossAxisAlignment.start,
-           children: [
-             Text(
-               title,
-               style: GoogleFonts.inter(
-                 color: AppColors.secondaryTextColor,
-                 fontSize: 12,
-                 fontWeight: FontWeight.w400,
-               ),
-             ),
-             Text(
-               '${value.toStringAsFixed(1)}h',
-               style: GoogleFonts.manrope(
-                  color: AppColors.brandPrimary,
-                 fontSize: 24,
-                 fontWeight: FontWeight.w700,
-               ),
-             ),
-           ],
-         ),
-       ),
-     );
-   }
+  static Widget _infoBox(String title, double value) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.subtleSurface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                color: AppColors.secondaryTextColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            Text(
+              '${value.toStringAsFixed(1)}h',
+              style: GoogleFonts.manrope(
+                color: AppColors.brandPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   static Widget _overtimeInfoBox(String title, double value) {
     return Expanded(
       child: Container(
         padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: value > 0 ? AppColors.vacationBackground : AppColors.sickBackground,
+          color: value > 0
+              ? AppColors.vacationBackground
+              : AppColors.sickBackground,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -506,7 +514,10 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "-",
-            style: GoogleFonts.inter(fontSize: 16, color: AppColors.textVacation),
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: AppColors.textVacation,
+            ),
           ),
         ),
       ),
@@ -536,7 +547,10 @@ class MonthlyOverviewScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(8.0),
           child: Text(
             "-",
-            style: GoogleFonts.inter(fontSize: 16, color: AppColors.textHoliday),
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: AppColors.textHoliday,
+            ),
           ),
         ),
       ),
@@ -561,21 +575,34 @@ class MonthlyOverviewScreen extends ConsumerWidget {
 
   static Widget diffCell(String text) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0, right: 34.0, left: 34.0),
+      padding: const EdgeInsets.only(
+        top: 8.0,
+        bottom: 8.0,
+        right: 34.0,
+        left: 34.0,
+      ),
       child: Container(
         alignment: Alignment.center,
         height: 20,
         decoration: BoxDecoration(
-          color: text.startsWith('+') ? AppColors.vacationBackground : AppColors.sickBackground,
+          color: text == '-'
+              ? AppColors.white
+              : (text.startsWith('+')
+                    ? AppColors.vacationBackground
+                    : AppColors.sickBackground),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           text,
-          style: GoogleFonts.manrope(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: text.startsWith('+') ? AppColors.textVacation : AppColors.textSick,
-          ),
+          style: text == '-'
+              ? GoogleFonts.inter(fontSize: 16, color: AppColors.textPrimary)
+              : GoogleFonts.manrope(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: text.startsWith('+')
+                      ? AppColors.textVacation
+                      : AppColors.textSick,
+                ),
         ),
       ),
     );

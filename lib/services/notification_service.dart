@@ -14,6 +14,7 @@ class NotificationService {
   static const int _idBreak45 = 1002;
   static const int _idExceeded8h = 1003;
   static const int _idExceeded10h = 1004;
+  static const int _idBreak29 = 1005;
 
   // IDs fuer geplante Benachrichtigungen (funktionieren auch bei geschlossener App)
   static const int _scheduledBreak30 = 2001;
@@ -32,6 +33,7 @@ class NotificationService {
   bool _break45Sent = false;
   bool _exceeded8hSent = false;
   bool _exceeded10hSent = false;
+  bool _break29Sent = false;
 
 
   Future<void> init() async {
@@ -139,6 +141,7 @@ class NotificationService {
     _break45Sent = false;
     _exceeded8hSent = false;
     _exceeded10hSent = false;
+    _break29Sent = false;
   }
 
   /// Markiere eine Benachrichtigung als gesendet (für Background-Callbacks)
@@ -151,6 +154,8 @@ class NotificationService {
       _exceeded8hSent = true;
     } else if (notificationId == _scheduledExceeded10h || notificationId == _idExceeded10h) {
       _exceeded10hSent = true;
+    } else if (notificationId == _idBreak29) {
+      _break29Sent = true;
     }
   }
 
@@ -165,6 +170,15 @@ class NotificationService {
 
     final workMinutes = workSeconds ~/ 60;
     final breakMinutes = breakSeconds ~/ 60;
+
+    if (!_break29Sent && workMinutes >= 360 && breakSeconds >= 29 * 60 && breakSeconds < 30 * 60) {
+      await _send(
+        id: _idBreak29,
+        title: '⏱ Fast geschafft',
+        body: 'Du hast 29 Minuten Pause erreicht. Noch 1 Minute bis zur 30-Minuten-Pause.',
+      );
+      _break29Sent = true;
+    }
 
     // Pausenpflicht nach 6 Stunden Arbeit (mind. 30 min Pause)
     if (!_break30Sent && workMinutes >= 360) {

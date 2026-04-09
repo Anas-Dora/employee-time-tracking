@@ -123,18 +123,16 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
     });
 
     try {
-      for (final month in selectedMonths) {
-        await PdfExportService.generateMonthlyPdf(
-          selectedYear,
-          month,
-          widget.profile,
-        );
-      }
+      await PdfExportService.generateSelectedMonthsPdf(
+        selectedYear,
+        selectedMonths.toList(),
+        widget.profile,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${selectedMonths.length} Monat(e) PDF(s) werden geöffnet!',
+              '${selectedMonths.length} Monat(e) werden in einem PDF geoeffnet!',
             ),
             backgroundColor: AppColors.success,
             duration: const Duration(seconds: 3),

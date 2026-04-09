@@ -20,51 +20,73 @@ class PdfExportService {
     int month,
     Profile profile,
   ) async {
-    final pdf = pw.Document();
-
-    final days = await _buildDaysForMonth(year, month);
-    final totalMinutes = _sumMonthMinutes(days);
-
-    final List<pw.Widget> content = [];
-
-    content.add(_buildProfileHeader(profile, year));
-    content.add(pw.SizedBox(height: 20));
-
-    content.addAll(_buildMonthPage(year, month, days, totalMinutes));
-    pdf.addPage(
-      pw.MultiPage(pageFormat: PdfPageFormat.a4, build: (ctx) => content),
-    );
-
     final monthName = DateFormat.MMMM('de_DE').format(DateTime(year, month));
     final fileName = '${profile.name}_${monthName.toLowerCase()}_$year.pdf';
 
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/$fileName');
-    await file.writeAsBytes(await pdf.save());
+    await _generatePdfForMonths(
+      year: year,
+      months: [month],
+      profile: profile,
+      fileName: fileName,
+    );
+  }
 
-    // PDF direkt öffnen
-    await OpenFilex.open(file.path);
+  static Future<void> generateSelectedMonthsPdf(
+    int year,
+    List<int> months,
+    Profile profile,
+  ) async {
+    final normalizedMonths = _normalizeMonths(months);
+    final startMonth = normalizedMonths.first.toString().padLeft(2, '0');
+    final endMonth = normalizedMonths.last.toString().padLeft(2, '0');
+    final fileName =
+        'Monatsbericht_${profile.name}_${year}_${startMonth}-${endMonth}.pdf';
+
+    await _generatePdfForMonths(
+      year: year,
+      months: normalizedMonths,
+      profile: profile,
+      fileName: fileName,
+    );
   }
 
   static Future<void> generateYearlyPdf(int year, Profile profile) async {
-    final pdf = pw.Document();
+    await _generatePdfForMonths(
+      year: year,
+      months: List<int>.generate(12, (index) => index + 1),
+      profile: profile,
+      fileName: 'Jahresbericht_${profile.name}_$year.pdf',
+    );
+  }
 
+  static Future<void> _generatePdfForMonths({
+    required int year,
+    required List<int> months,
+    required Profile profile,
+    required String fileName,
+  }) async {
+    final normalizedMonths = _normalizeMonths(months);
+    final pdf = pw.Document();
     final List<pw.Widget> content = [];
 
-    content.add(_buildProfileHeader(profile, year));
+    if (normalizedMonths.length == 1) {
+      content.add(
+        _buildMonthProfileHeader(profile, year, normalizedMonths.first),
+      );
+    } else {
+      content.add(_buildYearProfileHeader(profile, year));
+    }
     content.add(pw.SizedBox(height: 20));
 
-    for (int month = 1; month <= 12; month++) {
+    for (int index = 0; index < normalizedMonths.length; index++) {
+      final month = normalizedMonths[index];
       final days = await _buildDaysForMonth(year, month);
       final totalMinutes = _sumMonthMinutes(days);
 
       content.addAll(_buildMonthPage(year, month, days, totalMinutes));
-      // Seitenumbruch
-      if (month != 12) {
+      if (index != normalizedMonths.length - 1) {
         content.add(pw.NewPage());
       }
-
-      content.add(pw.SizedBox(height: 30));
     }
 
     pdf.addPage(
@@ -72,18 +94,45 @@ class PdfExportService {
     );
 
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/Jahresbericht_${profile.name}_$year.pdf');
+    final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(await pdf.save());
 
     await OpenFilex.open(file.path);
   }
 
-  static pw.Widget _buildProfileHeader(Profile profile, int year) {
+  static List<int> _normalizeMonths(List<int> months) {
+    final normalized = months.where((month) => month >= 1 && month <= 12).toSet().toList()..sort();
+    if (normalized.isEmpty) {
+      throw ArgumentError('Mindestens ein gueltiger Monat (1-12) ist erforderlich.');
+    }
+    return normalized;
+  }
+
+  static pw.Widget _buildYearProfileHeader(Profile profile, int year) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
           'Jahresbericht $year',
+          style: pw.TextStyle(fontSize: 30, fontWeight: pw.FontWeight.bold),
+        ),
+        pw.SizedBox(height: 20),
+        _buildProfileInfo(profile),
+      ],
+    );
+  }
+
+  static pw.Widget _buildMonthProfileHeader(
+    Profile profile,
+    int year,
+    int month,
+  ) {
+    final monthName = DateFormat.MMMM('de_DE').format(DateTime(year, month));
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          'Monatsbericht $monthName $year',
           style: pw.TextStyle(fontSize: 30, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 20),
