@@ -3,6 +3,7 @@ import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/widgets/day_edit_dialog.dart';
 import 'package:employee_time_tracking/dayOverview/week_overview.dart';
 import 'package:employee_time_tracking/services/holiday_service.dart';
+import 'package:employee_time_tracking/services/day_entry_sync_service.dart';
 import 'package:employee_time_tracking/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -124,6 +125,7 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
     // Typwechsel direkt persistieren (z. B. Krank/Urlaub per Schnellbutton).
     final updatedDay = updatedDays.firstWhere((d) => _isSameDay(d.date, date));
     await DatabaseHelper.instance.upsertDayEntry(updatedDay.toMap());
+    DayEntrySyncService.instance.notifyDayChanged(date);
   }
 
   Future<void> _updateDayDetails({
@@ -189,6 +191,7 @@ class WeeklyOverviewViewModel extends StateNotifier<WeekOverview> {
       date: date,
       segments: updatedDay.orderedSegments.map((s) => s.toDbMap()).toList(),
     );
+    DayEntrySyncService.instance.notifyDayChanged(date);
   }
 
   bool _isSameDay(DateTime first, DateTime second) {

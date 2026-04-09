@@ -121,6 +121,23 @@ void main() {
       expect(day.workDuration, const Duration(hours: 8));
     });
 
+    test('workDuration zieht explizite Pause bei einem Segment von der Segmentdauer ab', () {
+      final day = DayOverview(
+        date: DateTime(2026, 1, 5),
+        type: DayType.workday,
+        breakDuration: const Duration(minutes: 30),
+        segments: <WorkSegment>[
+          WorkSegment(
+            startTime: DateTime(2026, 1, 5, 9, 0),
+            endTime: DateTime(2026, 1, 5, 17, 0),
+          ),
+        ],
+      );
+
+      expect(day.workDuration, const Duration(hours: 7, minutes: 30));
+      expect(day.computedBreakDuration, const Duration(minutes: 30));
+    });
+
     test('workDuration nutzt Start-Ende minus Pause wenn keine Segmente vorhanden sind', () {
       final day = DayOverview(
         date: DateTime(2026, 1, 5),

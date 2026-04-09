@@ -47,8 +47,8 @@ void main() {
 
     expect(vm.state.days.length, 5);
     expect(vm.state.days.first.type, DayType.workday);
-    expect(vm.state.totalWork.inHours, 8);
-    expect(vm.progressPercent, greaterThanOrEqualTo(20));
+    expect(vm.state.totalWork.inMinutes, 450);
+    expect(vm.progressPercent, greaterThanOrEqualTo(18));
   });
 
   test('toggleDayType speichert geaenderten Typ', () async {

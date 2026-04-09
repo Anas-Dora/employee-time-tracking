@@ -1,5 +1,6 @@
 import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/monthlyOverview/work_day.dart';
+import 'package:employee_time_tracking/services/day_entry_sync_service.dart';
 import 'package:employee_time_tracking/services/holiday_service.dart';
 import 'package:employee_time_tracking/theme/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -193,15 +194,25 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
         .join('\n');
 
     int workedMinutes = 0;
-    int breakMinutes = 0;
+    int gapBreakMinutes = 0;
     for (int i = 0; i < ordered.length; i++) {
       workedMinutes += ordered[i].duration.inMinutes;
       if (i > 0) {
         final pause = ordered[i].startTime.difference(ordered[i - 1].endTime).inMinutes;
         if (pause > 0) {
-          breakMinutes += pause;
+          gapBreakMinutes += pause;
         }
       }
+    }
+
+    final explicitBreakMinutes =
+        (wd.pause != '-' && wd.pause.isNotEmpty) ? (int.tryParse(wd.pause) ?? 0) : 0;
+    final breakMinutes = explicitBreakMinutes > gapBreakMinutes
+        ? explicitBreakMinutes
+        : gapBreakMinutes;
+    workedMinutes -= (breakMinutes - gapBreakMinutes);
+    if (workedMinutes < 0) {
+      workedMinutes = 0;
     }
 
     final totalStr = _minutesToTimeString(workedMinutes);
@@ -295,6 +306,7 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
             ]
           : const [],
     );
+    DayEntrySyncService.instance.notifyDayChanged(date);
   }
 
   String _minutesToTimeString(int minutes) {

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:employee_time_tracking/database/database_helper.dart';
 import 'package:employee_time_tracking/homePage/work_time.dart';
 import 'package:employee_time_tracking/profile/profile_vm.dart';
+import 'package:employee_time_tracking/services/day_entry_sync_service.dart';
 import 'package:employee_time_tracking/services/notification_service.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -57,6 +58,7 @@ class HomeState {
 
 class HomeViewModel extends StateNotifier<HomeState> {
   Timer? _timer;
+  StreamSubscription<DateTime>? _daySyncSubscription;
 
   HomeViewModel()
       : super(HomeState(
@@ -65,7 +67,92 @@ class HomeViewModel extends StateNotifier<HomeState> {
           workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
           breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
         )) {
+    _subscribeToDayEntryUpdates();
     _init();
+  }
+
+  void _subscribeToDayEntryUpdates() {
+    _daySyncSubscription = DayEntrySyncService.instance.changedDays.listen((date) {
+      unawaited(_handleExternalDayUpdate(date));
+    });
+  }
+
+  Future<void> _handleExternalDayUpdate(DateTime date) async {
+    final today = DateTime.now();
+    if (!_isSameDay(date, today)) return;
+
+    final entry = await DatabaseHelper.instance.getDayEntry(today);
+    final segmentRows = await DatabaseHelper.instance.getWorkSegmentsForDate(today);
+    final segments = segmentRows.map(WorkSegment.fromMap).toList();
+
+    if (entry == null) {
+      if (state.isRunning || state.isOnBreak) return;
+      state = state.copyWith(
+        clearStartedAt: true,
+        workTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+        breakTime: WorkTime(hours: 0, minutes: 0, seconds: 0),
+      );
+      _syncScheduledNotifications();
+      return;
+    }
+
+    final day = DayOverview.fromMap(entry).copyWith(segments: segments);
+    final dbWorkSec = day.workDuration?.inSeconds ?? 0;
+    final dbBreakSec = day.computedBreakDuration.inSeconds;
+
+    if (state.isRunning || state.isOnBreak) {
+      final currentWorkSec = _workTimeToSeconds(state.workTime);
+      final currentBreakSec = _workTimeToSeconds(state.breakTime);
+      final adjustedWorkSec =
+          (currentWorkSec - (dbBreakSec - currentBreakSec)).clamp(0, 8640000).toInt();
+
+      state = state.copyWith(
+        workTime: _secondsToWorkTime(adjustedWorkSec),
+        breakTime: _secondsToWorkTime(dbBreakSec),
+        startedAt: state.startedAt ?? day.effectiveStartTime,
+      );
+      await _persistAccumulatedValuesForCurrentTimer();
+      _syncScheduledNotifications();
+      return;
+    }
+
+    state = state.copyWith(
+      startedAt: day.effectiveStartTime,
+      workTime: _secondsToWorkTime(dbWorkSec),
+      breakTime: _secondsToWorkTime(dbBreakSec),
+    );
+    _syncScheduledNotifications();
+  }
+
+  Future<void> _persistAccumulatedValuesForCurrentTimer() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+
+    final currentWorkSec = _workTimeToSeconds(state.workTime);
+    final currentBreakSec = _workTimeToSeconds(state.breakTime);
+
+    int runningWorkSec = 0;
+    int runningBreakSec = 0;
+
+    final workStartMs = prefs.getInt(_kWorkStartMs);
+    if (state.isRunning && workStartMs != null) {
+      final workStart = DateTime.fromMillisecondsSinceEpoch(workStartMs);
+      runningWorkSec = now.difference(workStart).inSeconds;
+      if (runningWorkSec < 0) runningWorkSec = 0;
+    }
+
+    final breakStartMs = prefs.getInt(_kBreakStartMs);
+    if (state.isOnBreak && breakStartMs != null) {
+      final breakStart = DateTime.fromMillisecondsSinceEpoch(breakStartMs);
+      runningBreakSec = now.difference(breakStart).inSeconds;
+      if (runningBreakSec < 0) runningBreakSec = 0;
+    }
+
+    final accumulatedWorkSec = (currentWorkSec - runningWorkSec).clamp(0, 8640000).toInt();
+    final accumulatedBreakSec = (currentBreakSec - runningBreakSec).clamp(0, 8640000).toInt();
+
+    await prefs.setInt(_kAccumulatedWorkSec, accumulatedWorkSec);
+    await prefs.setInt(_kAccumulatedBreakSec, accumulatedBreakSec);
   }
 
   Future<void> _init() async {
@@ -485,6 +572,16 @@ class HomeViewModel extends StateNotifier<HomeState> {
     return WorkTime(hours: h, minutes: m, seconds: s);
   }
 
+  int _workTimeToSeconds(WorkTime value) {
+    return value.hours * 3600 + value.minutes * 60 + value.seconds;
+  }
+
+  bool _isSameDay(DateTime first, DateTime second) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
+  }
+
   double progress() {
     final totalSeconds =
         state.workTime.hours * 3600 + state.workTime.minutes * 60 + state.workTime.seconds;
@@ -518,6 +615,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
 
   @override
   void dispose() {
+    _daySyncSubscription?.cancel();
     _timer?.cancel();
     super.dispose();
   }

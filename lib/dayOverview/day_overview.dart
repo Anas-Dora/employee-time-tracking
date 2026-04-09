@@ -94,7 +94,8 @@ class DayOverview {
         total += gap;
       }
     }
-    return total;
+    final explicitBreak = breakDuration ?? Duration.zero;
+    return explicitBreak > total ? explicitBreak : total;
   }
 
   Duration? get workDuration {
@@ -102,10 +103,27 @@ class DayOverview {
     if (type != DayType.workday) return null;
 
     if (orderedSegments.isNotEmpty) {
-      return orderedSegments.fold<Duration>(
+      final segmentDuration = orderedSegments.fold<Duration>(
         Duration.zero,
         (sum, segment) => sum + segment.duration,
       );
+
+      Duration gapBreak = Duration.zero;
+      for (int i = 1; i < orderedSegments.length; i++) {
+        final gap = orderedSegments[i].startTime
+            .difference(orderedSegments[i - 1].endTime);
+        if (!gap.isNegative) {
+          gapBreak += gap;
+        }
+      }
+      final explicitBreak = breakDuration ?? Duration.zero;
+      final additionalBreak = explicitBreak - gapBreak;
+      if (additionalBreak <= Duration.zero) {
+        return segmentDuration;
+      }
+
+      final net = segmentDuration - additionalBreak;
+      return net.isNegative ? Duration.zero : net;
     }
 
     if (startTime == null || endTime == null) return null;
