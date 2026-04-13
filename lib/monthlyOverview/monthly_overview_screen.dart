@@ -401,6 +401,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
   }
 
   static Widget _infoBox(String title, double value) {
+    final formatted = _formatHoursMinutes(value);
     return Expanded(
       child: Container(
         padding: EdgeInsets.all(8),
@@ -421,7 +422,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
               ),
             ),
             Text(
-              '${value.toStringAsFixed(1)}h',
+              formatted,
               style: GoogleFonts.manrope(
                 color: AppColors.brandPrimary,
                 fontSize: 24,
@@ -435,6 +436,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
   }
 
   static Widget _overtimeInfoBox(String title, double value) {
+    final formatted = _formatOvertimeHours(value);
     return Expanded(
       child: Container(
         padding: EdgeInsets.all(8),
@@ -457,7 +459,7 @@ class MonthlyOverviewScreen extends ConsumerWidget {
               ),
             ),
             Text(
-              '${value > 0 ? '+' : ''}${value.toStringAsFixed(1)}h',
+              formatted,
               style: GoogleFonts.manrope(
                 color: value > 0 ? AppColors.textVacation : AppColors.textSick,
                 fontSize: 24,
@@ -468,6 +470,24 @@ class MonthlyOverviewScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  static String _formatOvertimeHours(double hours) {
+    final parts = _toHoursMinutes(hours.abs());
+    final sign = hours < 0 ? '−' : '+';
+    return '$sign${parts.$1}h ${parts.$2}min';
+  }
+
+  static String _formatHoursMinutes(double hours) {
+    final parts = _toHoursMinutes(hours.abs());
+    return '${parts.$1}h ${parts.$2}min';
+  }
+
+  static (int, int) _toHoursMinutes(double hours) {
+    final totalMinutes = (hours * 60).round();
+    final h = totalMinutes ~/ 60;
+    final m = totalMinutes % 60;
+    return (h, m);
   }
 
   static Widget dateCell(

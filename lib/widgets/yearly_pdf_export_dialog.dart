@@ -111,7 +111,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
     if (selectedMonths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Bitte wählen Sie mindestens einen Monat aus'),
+          content: Text('Bitte wähle mindestens einen Monat aus.'),
           backgroundColor: AppColors.warning,
         ),
       );
@@ -257,7 +257,7 @@ class _YearlyPdfExportDialogState extends State<YearlyPdfExportDialog> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Wählen Sie Monate zum Herunterladen aus',
+              'Wähle Monate zum Herunterladen aus.',
               style: GoogleFonts.inter(
                 fontSize: bodySize,
                 fontWeight: FontWeight.w500,

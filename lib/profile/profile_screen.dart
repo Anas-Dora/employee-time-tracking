@@ -44,7 +44,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               Text(
-                'Verwalten Sie Ihre persönlichen und organisatorischen chronometrischen Daten',
+                'Verwalte deine persönlichen und organisatorischen chronometrischen Daten.',
                 style: GoogleFonts.manrope(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,

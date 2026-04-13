@@ -382,7 +382,7 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
         MonthlyNotification(
           type: MonthlyNotificationType.overtimeGoal,
           message:
-              'Ihr Überstundenguthaben hat mit ${_formatHours(overtimeHours)} h den Zielwert von ${_formatHours(overtimeGoalHours)} h erreicht.',
+              'Dein Überstundenguthaben hat mit ${_formatHours(overtimeHours)} den Zielwert von ${_formatHours(overtimeGoalHours)} erreicht.',
         ),
       );
     }
@@ -392,7 +392,7 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
         MonthlyNotification(
           type: MonthlyNotificationType.negativeOvertime,
           message:
-              'Sie haben aktuell ${_formatHours(overtimeHours.abs())} Minusstunden in $monthLabel.',
+              'Du hast aktuell ${_formatHours(overtimeHours.abs())} Minusstunden in $monthLabel.',
         ),
       );
     }
@@ -500,7 +500,10 @@ class MonthlyOverviewVM extends StateNotifier<MonthlyOverviewState> {
   }
 
   static String _formatHours(double value) {
-    return NumberFormat('0.0', 'de_DE').format(value);
+    final totalMinutes = (value.abs() * 60).round();
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    return '${hours}h ${minutes}min';
   }
 
   TimeOfDay? parseTimeOfDay(String time) {

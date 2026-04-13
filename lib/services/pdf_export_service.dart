@@ -238,7 +238,7 @@ class PdfExportService {
             style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
           ),
           pw.Text(
-            '${(totalMinutes / 60).toStringAsFixed(2)} h',
+            _formatMinutesAsHoursMinutes(totalMinutes),
             style: pw.TextStyle(fontSize: 12),
           ),
         ],
@@ -251,12 +251,26 @@ class PdfExportService {
       year,
       month,
     );
+    final segmentRows = await DatabaseHelper.instance.getWorkSegmentsForMonth(
+      year,
+      month,
+    );
     final firstDay = DateTime(year, month, 1);
     final lastDay = DateTime(year, month + 1, 0);
 
+    final Map<String, List<WorkSegment>> segmentsByDate = {};
+    for (final row in segmentRows) {
+      final segDate = DateTime.parse(row['date'] as String);
+      final key = '${segDate.year}-${segDate.month}-${segDate.day}';
+      segmentsByDate.putIfAbsent(key, () => []).add(WorkSegment.fromMap(row));
+    }
+
     final byDate = <String, WorkDay>{};
     for (final entry in entries) {
-      final computed = _computeWorkDay(WorkDay.fromMap(entry));
+      final wdBase = WorkDay.fromMap(entry);
+      final wdKey = '${wdBase.date.year}-${wdBase.date.month}-${wdBase.date.day}';
+      final wd = wdBase.copyWith(segments: segmentsByDate[wdKey] ?? const []);
+      final computed = _computeWorkDay(wd);
       final key =
           '${computed.date.year}-${computed.date.month}-${computed.date.day}';
       byDate[key] = computed;
@@ -323,6 +337,10 @@ class PdfExportService {
   }
 
   static WorkDay _computeWorkDay(WorkDay wd) {
+    if (wd.type == DayType.workday && wd.segments.isNotEmpty) {
+      return _computeWorkDayFromSegments(wd);
+    }
+
     const targetMinutes = 8 * 60;
     String totalStr = '-';
     String diffStr = '-';
@@ -364,6 +382,55 @@ class PdfExportService {
     }
 
     return wd.copyWith(total: totalStr, diff: diffStr);
+  }
+
+  static WorkDay _computeWorkDayFromSegments(WorkDay wd) {
+    const int targetMinutes = 8 * 60;
+    final ordered = List<WorkSegment>.from(wd.segments)
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    final startLines = ordered
+        .map((segment) => DateFormat('HH:mm').format(segment.startTime))
+        .join('\n');
+    final endLines = ordered
+        .map((segment) => DateFormat('HH:mm').format(segment.endTime))
+        .join('\n');
+
+    int workedMinutes = 0;
+    int gapBreakMinutes = 0;
+    for (int i = 0; i < ordered.length; i++) {
+      workedMinutes += ordered[i].duration.inMinutes;
+      if (i > 0) {
+        final pause =
+            ordered[i].startTime.difference(ordered[i - 1].endTime).inMinutes;
+        if (pause > 0) {
+          gapBreakMinutes += pause;
+        }
+      }
+    }
+
+    final explicitBreakMinutes =
+        (wd.pause != '-' && wd.pause.isNotEmpty) ? (int.tryParse(wd.pause) ?? 0) : 0;
+    final breakMinutes = explicitBreakMinutes > gapBreakMinutes
+        ? explicitBreakMinutes
+        : gapBreakMinutes;
+    workedMinutes -= (breakMinutes - gapBreakMinutes);
+    if (workedMinutes < 0) {
+      workedMinutes = 0;
+    }
+
+    final totalStr = _minutesToTimeString(workedMinutes);
+    final diffMinutes = workedMinutes - targetMinutes;
+    final sign = diffMinutes >= 0 ? '+' : '-';
+    final diffStr = '$sign${_minutesToTimeString(diffMinutes.abs())}';
+
+    return wd.copyWith(
+      start: startLines,
+      end: endLines,
+      pause: breakMinutes.toString(),
+      total: totalStr,
+      diff: diffStr,
+    );
   }
 
   static String _minutesToTimeString(int totalMinutes) {
@@ -458,5 +525,12 @@ class PdfExportService {
     final hours = int.tryParse(parts[0]) ?? 0;
     final mins = int.tryParse(parts[1]) ?? 0;
     return (hours * 60 + mins).toDouble();
+  }
+
+  static String _formatMinutesAsHoursMinutes(double totalMinutes) {
+    final roundedMinutes = totalMinutes.round();
+    final hours = roundedMinutes ~/ 60;
+    final minutes = roundedMinutes % 60;
+    return '${hours}h ${minutes}min';
   }
 }
